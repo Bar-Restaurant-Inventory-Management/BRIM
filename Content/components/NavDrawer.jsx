@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Drawer as MUIDrawer,
   ListItem,
@@ -8,6 +8,8 @@ import {
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import InboxIcon from "@material-ui/icons/MoveToInbox";
+import NtfcnSnackbar from './notifications/NtfcnSnackbar.jsx';
+import NtfcnDialog from './notifications/NtfcnDialog.jsx';
 import MailIcon from "@material-ui/icons/Mail";
 import { withRouter } from "react-router-dom";
 
@@ -32,6 +34,11 @@ const NavDrawer = props => {
       text: "Recipes",
       icon: <InboxIcon />,
       onClick: () => history.push("/recipes")
+    },
+    {
+      text: "Tags",
+      icon: <InboxIcon />,
+      onClick:()=>history.push("/tags")
     },
   ];
   return (

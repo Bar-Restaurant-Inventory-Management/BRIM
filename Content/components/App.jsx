@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Route,StaticRouter, Switch } from "react-router-dom";
 import ItemTableBasic from './items/ItemTable.jsx'
 import RecipeTable from './recipes/RecipeTable.jsx'
+import TagTable from './tags/TagTable.jsx'
 import NavDrawer from "./NavDrawer.jsx";
 import { makeStyles } from "@material-ui/core/styles";
 import { Helmet} from 'react-helmet';
@@ -41,6 +42,9 @@ export default function App(props) {
       </Switch>
       <Switch>
         <Route exact from="/recipes" render={props => <RecipeTable  />} />
+      </Switch>
+      <Switch>
+        <Route exact from="/tags" render={props=> <TagTable/>}/>
       </Switch>
     </div>
   </ThemeProvider>

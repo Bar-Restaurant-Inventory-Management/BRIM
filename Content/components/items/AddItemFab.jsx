@@ -14,9 +14,16 @@ import GreenSwitch from '../widgets/GreenSwitch.jsx';
 import ItemUnitSelect from './ItemUnitSelect.jsx';
 import Box from '@material-ui/core/Box';
 import Container from '@material-ui/core/Container';
+import TagsAutoComplete from '../tags/TagAutoComplete.jsx';
 
 export default function ItemDialog(props) {
   const [open, setOpen] = React.useState(false);
+  const [tags,setTags]=React.useState({
+    list:[],
+  })
+  const [selectedTags,setSelectedTags]=React.useState({
+    list:[]
+  })
   const [values, setValues] = React.useState({
     newItemName: '',
     newItemEst: '',
@@ -29,16 +36,31 @@ export default function ItemDialog(props) {
     newItemVintage: false,
     newItemUnits: 1,
     newItemID: -1,
+    newItemTags:[],
   })
 
   const handleClickOpen = () => {
-    setOpen(true);
+    let dataurl = "/inventory/tags";
+		let xhr = new XMLHttpRequest();
+		xhr.open('GET', dataurl, true);
+
+		xhr.onload = () => {
+			let data = JSON.parse(xhr.responseText);
+			console.log(data);
+			setTags({
+				list: data.tags,
+			});
+		};
+		xhr.send();
+		setOpen(true);
   };
   const handleCancel = () => {
 
     setOpen(false);
   }
   const handleClose = () => {
+    handleSave()
+    /*
     let data = new FormData();
     let submitUrl = "/inventory/newitem" 
     data.append('name', values.newItemName);
@@ -61,14 +83,52 @@ export default function ItemDialog(props) {
     }
     xhr.send(data);
     setOpen(false);
+    */
     
   };
+  const handleSave=()=>{
+    let submitUrl="/inventory/newitem"
+    let combined={
+      name:values.newItemName,
+      estimate:values.newItemLoEst,
+      ideal:values.newItemIdeal,
+      par:values.newItemPar,
+      brand:values.newItemBrand,
+      price:values.newItemPrice,
+      size:values.newItemBotSize,
+      upc:values.newItemUPC,
+      vintage:values.newItemVintage,
+      units:values.newItemUnits,
+      id:values.newItemID,
+      tags:selectedTags.list,
+    }
+    
+    let xhr = new XMLHttpRequest();
+    xhr.open('POST',submitUrl,true);
+    xhr.setRequestHeader('Content-Type','application/json');
+    xhr.onload= () =>{
+      props.onItemSubmit();
+      console.log("done");
+    }
+    xhr.send(JSON.stringify(combined))
+    setOpen(false);
+  }
 
   const handleChangeText =(event)=>{
     setValues({...values,[event.target.id]:event.target.value});
   };
   const handleChangeSelect = (event)=>{
     setValues({...values,newItemUnits:event.target.value});
+  }
+  const handleChangeTags = (event,newValue)=>{
+    console.log("New value");
+    console.log(newValue);
+    selectedTags.list=newValue;
+    setSelectedTags({
+      ...selectedTags
+    });
+    console.log("Selected tags");
+    console.log(selectedTags);
   }
   const handleChangeSwitch =(event)=>{
 
@@ -99,6 +159,7 @@ export default function ItemDialog(props) {
           <ItemTextFeild id={"newItem" + "UPC"} label = "Units per Case" dbl={false}onChange = {handleChangeText}/> 
           <ItemUnitSelect id={"newItem" + "Units"} value={values.newItemUnits} onChange={handleChangeSelect}/>
           <ItemTextFeild id={"newItem" + "Vintage"} label = "Vintage" dbl={false} onChange={handleChangeText}/>
+          <TagsAutoComplete allValues={tags} selValues={selectedTags} onChange={handleChangeTags}/>
         </DialogContent>
         <DialogActions>
           <Button variant = "contained" onClick={handleCancel} color="secondary" startIcon={<CloseIcon/>}>

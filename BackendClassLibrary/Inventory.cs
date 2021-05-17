@@ -10,22 +10,30 @@ using System.Threading.Tasks;
 namespace BRIM.BackendClassLibrary
 {
     //The main class of the program. 
-    public class Inventory
+    public class Inventory:IInventoryManager
     {
-        public List<Item> ItemList = new List<Item>(); //holds all items registered to this BRIM instance
-        public List<Recipe> RecipeList = new List<Recipe>(); //holds all of the recipes for this BRIM instance
-        public List<Tag> TagList = new List<Tag>(); //holds all of the tags for this BRIM instance
+        public List<Item> ItemList{get;set;} //holds all items registered to this BRIM instance
+        public List<Recipe> RecipeList {get;set;} //holds all of the recipes for this BRIM instance
+        public List<Tag> TagList {get;set;} //holds all of the tags for this BRIM instance
         public string Country;
-        public IDatabaseManager databaseManager;
-
-        // Default Constructor, makes its own DatabaseManager
-        public Inventory() {
-            this.databaseManager = new DatabaseManager();
+        public IDatabaseManager databaseManager = new DatabaseManager();
+        public NotificationManager notificationManager;
+        public Inventory()
+        {
+            notificationManager= new NotificationManager();
+            ItemList=new List<Item>();
+            RecipeList = new List<Recipe>();
+            TagList=new List<Tag>();
         }
 
-        //  Overloaded Constructor, takes IDatabaseManager instance (For Mocking when Unit Testing)
-        public Inventory(IDatabaseManager dbManager) {
-            this.databaseManager = dbManager;
+
+        /// <summary>
+        /// Replaces the existing database manager with a new one, replaces the old overloaded contructor
+        /// </summary>
+        /// <param name="databasemanager"></param>
+        public void ReplaceDBManager(IDatabaseManager databasemanager)
+        {
+            databaseManager=databasemanager;
         }
 
         /// <summary>
@@ -39,25 +47,25 @@ namespace BRIM.BackendClassLibrary
             //make sure status is recalculated to reflect any changes in Quantity
             updateItem.CalculateStatus(); 
             
-            bool result = this.databaseManager.updateDrink(updateItem);
+            bool result = databaseManager.updateDrink(updateItem);
 
             if (!result)
             {
                 Console.WriteLine("Error: Item Update Failed");
 
                 string mes = updateItem.Name + " could not be updated";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
 
             //Similar to Recipe updates, delete all Tag entries and readd them for simplicity
-            if (!this.databaseManager.deleteDrinkTagsByDrinkID(updateItem.ID))
+            if (!databaseManager.deleteDrinkTagsByDrinkID(updateItem.ID))
             {
                 Console.WriteLine("Error: Drink Tag Entry Deletion Failed. Stopping here");
 
                 string mes = updateItem.Name + " could not be updated";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -66,7 +74,7 @@ namespace BRIM.BackendClassLibrary
             foreach (Tag T in updateItem.Tags)
             {
                 int tagID = T.ID;
-                result = this.databaseManager.addDrinkTag(updateItem.ID, tagID);
+                result = databaseManager.addDrinkTag(updateItem.ID, tagID);
 
                 if (!result)
                 {
@@ -74,7 +82,7 @@ namespace BRIM.BackendClassLibrary
                     + T.Name + "' on item '" + updateItem.Name + "'. Stopping here");
 
                     string mes = updateItem.Name + " could not be updated";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
 
                     return 1;
                 }
@@ -92,7 +100,7 @@ namespace BRIM.BackendClassLibrary
         public int AddItem(Item i)
         {
             Drink newItem = i as Drink;
-            bool result = this.databaseManager.addDrink(newItem);
+            bool result = databaseManager.addDrink(newItem);
             string mes = "";
             
             if (!result)
@@ -100,7 +108,7 @@ namespace BRIM.BackendClassLibrary
                 Console.WriteLine("Error: Item Addition Failed");
 
                 mes = newItem.Name + " could not be added";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -108,12 +116,12 @@ namespace BRIM.BackendClassLibrary
             //add in the tags associated with that drink if there are any
             foreach (Tag T in newItem.Tags)
             {
-                if (!this.databaseManager.addDrinkTag(newItem.ID, T.ID))
+                if (!databaseManager.addDrinkTag(newItem.ID, T.ID))
                 {
                     Console.WriteLine("Error: Tag could not be added");
 
                     mes = T.Name + " could not be added";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
                     
                     return 1;
                 }
@@ -131,14 +139,14 @@ namespace BRIM.BackendClassLibrary
         public int RemoveItem(Item i)
         {
             Drink removeItem = i as Drink;
-            bool result = this.databaseManager.deleteDrink(removeItem);
+            bool result = databaseManager.deleteDrink(removeItem);
 
             if (!result)
             {
                 Console.WriteLine("Error: Item removal failed");
 
                 string mes = removeItem.Name + " could not be removed";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -146,7 +154,7 @@ namespace BRIM.BackendClassLibrary
             return 0;
         }
 
-        public int PurchseItem(Recipe r)
+        public int PurchaseItem(Recipe r)
         {
             return 0;
         }
@@ -212,7 +220,7 @@ namespace BRIM.BackendClassLibrary
                                         quantitySold = 1;
 
                                         string mes = "Order " + order["id"] + " may not have updated accurately. No quantity sold provided.";
-                                        NotificationManager.AddNotification(mes);
+                                        notificationManager.AddNotification(mes);
                                     }
 
                                     if (pourMeasurement == "oz")
@@ -235,7 +243,7 @@ namespace BRIM.BackendClassLibrary
                         } else
                         {
                             string mes = "Order " + order["id"] + " must be manually updated. No modifications given.";
-                            NotificationManager.AddNotification(mes);
+                            notificationManager.AddNotification(mes);
                         }
                     } else if (recipieFound != -1)
                     {
@@ -256,7 +264,7 @@ namespace BRIM.BackendClassLibrary
                                 amtOrdered = 1;
 
                                 string mes = "Order " + order["id"] + " may not have updated properly, no quantity sold specified";
-                                NotificationManager.AddNotification(mes);
+                                notificationManager.AddNotification(mes);
                             }
 
                             //increment the amount of the recipie ordered
@@ -284,7 +292,7 @@ namespace BRIM.BackendClassLibrary
                                     {
                                         //Flag for the user because modification is unknown
                                         string mes = modName + " is unknown. Must be updated manually.";
-                                        NotificationManager.AddNotification(mes);
+                                        notificationManager.AddNotification(mes);
                                     }
                                 }
                             }
@@ -308,7 +316,7 @@ namespace BRIM.BackendClassLibrary
                         else
                         {
                             string mes = "Order " + order["id"] + " may not have updated properly, no quantity sold specified";
-                            NotificationManager.AddNotification(mes);
+                            notificationManager.AddNotification(mes);
 
                             //update by assuming only one was ordered
                             int amtOrdered = 1;
@@ -336,7 +344,7 @@ namespace BRIM.BackendClassLibrary
                     {
                         //flag user for unknown items the user has to update
                         string mes = name + " is unknown. Please update manually.";
-                        NotificationManager.AddNotification(mes);
+                        notificationManager.AddNotification(mes);
                     }
                 }
             }
@@ -366,15 +374,15 @@ namespace BRIM.BackendClassLibrary
                 if (updatedItem.Status == status.belowIdeal)
                 {
                     string mes = updatedItem.Name + " is below ideal level";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
                 } else if (updatedItem.Status == status.belowPar)
                 {
                     string mes = updatedItem.Name + " is below par level";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
                 } else if (updatedItem.Status == status.empty)
                 {
                     string mes = updatedItem.Name + " is empty";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
                 }
             }
 
@@ -392,7 +400,7 @@ namespace BRIM.BackendClassLibrary
         public int GetItemList()
         {
             List<Item> drinksList = new List<Item>();
-            drinksList = this.databaseManager.getDrinks();
+            drinksList = databaseManager.getDrinks();
             ItemList = drinksList;
 
             return 0;
@@ -402,7 +410,7 @@ namespace BRIM.BackendClassLibrary
         public int GetTagList()
         {
             List<Tag> tagList = new List<Tag>();
-            tagList = this.databaseManager.getTags();
+            tagList = databaseManager.getTags();
             TagList = tagList;
 
             return 0;
@@ -411,13 +419,13 @@ namespace BRIM.BackendClassLibrary
         //Adds a tag to the tag table
         public int AddTag(string tagName)
         {
-            int tagID = this.databaseManager.addTag(tagName);
+            int tagID = databaseManager.addTag(tagName);
             if (tagID == -1)
             {
                 Console.WriteLine("Error: Tag Addition Failed");
 
                 string mes = tagName + " could not be added";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -431,14 +439,14 @@ namespace BRIM.BackendClassLibrary
         //Removes a tag from the tag table
         public int RemoveTag(int tagID)
         {
-            bool result = this.databaseManager.deleteTag(tagID);
+            bool result = databaseManager.deleteTag(tagID);
 
             if (!result)
             {
                 Console.WriteLine("Error: Tag removal failed");
 
                 string mes = "Tag with " + tagID + " could not be removed";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -468,7 +476,7 @@ namespace BRIM.BackendClassLibrary
         public int GetRecipeList()
         {
             List<Recipe> recipeList = new List<Recipe>();
-            recipeList = this.databaseManager.getRecipes();
+            recipeList = databaseManager.getRecipes();
             RecipeList = recipeList;
 
             return 0;
@@ -489,19 +497,19 @@ namespace BRIM.BackendClassLibrary
                 string mes = newRecipe.Name + " could not be added." + 
                 "\n Error: New Recipe Item List has one or more Invalid Entries. "+
                 "Not Adding New Recipe Name, Base Liquor, Or Ingredients Into Database";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
 
             //add entry into Recipe Table
-            recipeID = this.databaseManager.addRecipe(newRecipe.Name, newRecipe.BaseLiquor);
+            recipeID = databaseManager.addRecipe(newRecipe.Name, newRecipe.BaseLiquor);
             if (recipeID == -1)
             {
                 Console.WriteLine("Error: Recipe Entry Addition Failed. Stopping here");
 
                 string mes = newRecipe.Name + " could not be added";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -511,7 +519,7 @@ namespace BRIM.BackendClassLibrary
             foreach(RecipeItem component in newRecipe.ItemList) {
                 int itemID = component.Item.ID;
                 double itemQuantity = component.Quantity;
-                itemListResult = this.databaseManager.addDrinkRecipe(recipeID, itemID, itemQuantity);
+                itemListResult = databaseManager.addDrinkRecipe(recipeID, itemID, itemQuantity);
 
                 if (itemListResult == -1) {
                     Console.WriteLine("Error: DrinkRecipe Entry Addition Failed For Entry with '"
@@ -519,7 +527,7 @@ namespace BRIM.BackendClassLibrary
 
                     string mes = component.Item.Name + " could not be added to the recipie." +
                     "\n Recipe Ingredient Data Entry Stopped There.";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
 
                     return 1;
                 }
@@ -545,7 +553,7 @@ namespace BRIM.BackendClassLibrary
                 string mes = updatedRecipe.Name + " could not be added." + 
                 "\n Error: Updated Recipe Item List has one or more Invalid Entries. " +
                 "Not Updating Recipe Name, Base Liqour, or Ingredients In Database.";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -555,22 +563,22 @@ namespace BRIM.BackendClassLibrary
             string updatedName = updatedRecipe.Name;
             string updatedBase = updatedRecipe.BaseLiquor;
             
-            if (!this.databaseManager.updateRecipe(recipeID, updatedName, updatedBase))
+            if (!databaseManager.updateRecipe(recipeID, updatedName, updatedBase))
             {
                 Console.WriteLine("Error: Recipe Entry Update Failed. Stopping here");
 
                 string mes = updatedName + " could not be updated";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
             
             //deleting old DrinkRecipe table entries for this Recipe
-            if (!this.databaseManager.deleteDrinkRecipesByRecipeID(recipeID)) {
+            if (!databaseManager.deleteDrinkRecipesByRecipeID(recipeID)) {
                 Console.WriteLine("Error: DrinkRecipe Entry Deletion Failed. Stopping here");
 
                 string mes = updatedName + " could not be updated";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -580,14 +588,14 @@ namespace BRIM.BackendClassLibrary
             foreach(RecipeItem component in updatedRecipe.ItemList) {
                 int itemID = component.Item.ID;
                 double itemQuantity = component.Quantity;
-                itemListResult = this.databaseManager.addDrinkRecipe(recipeID, itemID, itemQuantity);
+                itemListResult = databaseManager.addDrinkRecipe(recipeID, itemID, itemQuantity);
 
                 if (itemListResult == -1) {
                     Console.WriteLine("Error: DrinkRecipe Entry Addition Failed For Entry with '"
                     + itemID + "' ItemID and '" + itemQuantity + "' failed. Stopping here");
 
                     string mes = component.Item.Name + " could not be updated";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
 
                     return 1;
                 }
@@ -598,11 +606,11 @@ namespace BRIM.BackendClassLibrary
 
         //Check to make Sure An Added or Updated Recipe's DrinkRecipe is valid before adding it in 
         private bool validateDrinkRecipeList(List<RecipeItem> itemList) {
-            this.GetItemList();    //ItemList must be populated and uptoDate First                    
+            GetItemList();    //ItemList must be populated and uptoDate First                    
             foreach(RecipeItem component in itemList) {
                 int itemID = component.Item.ID;
                 double itemQuantity = component.Quantity;
-                int drinkFound = this.ItemList.FindIndex(x => x.ID == itemID);
+                int drinkFound = ItemList.FindIndex(x => x.ID == itemID);
 
                 if (drinkFound == -1 || itemQuantity < 0) {
                     return false;
@@ -626,21 +634,21 @@ namespace BRIM.BackendClassLibrary
 
             //deleting old DrinkRecipes table entries for this Recipe
             //Should be done first since drinkrecipe Table is the one with the constraints
-            if (!this.databaseManager.deleteDrinkRecipesByRecipeID(recipeID)) {
+            if (!databaseManager.deleteDrinkRecipesByRecipeID(recipeID)) {
                 Console.WriteLine("Error: DrinkRecipe Entry Deletion Failed. Stopping here");
 
                 string mes = unwantedRecipe.Name + " could not be deleted";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
 
             // delete recip entry from recipes table 
-            if (!this.databaseManager.deleteRecipe(recipeID)) {
+            if (!databaseManager.deleteRecipe(recipeID)) {
                 Console.WriteLine("Error: DrinkRecipe Entry Deletion Failed. Stopping here");
 
                 string mes = unwantedRecipe.Name + " could not be deleted";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }

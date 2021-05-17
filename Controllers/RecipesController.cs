@@ -10,25 +10,23 @@ namespace BRIM
 	public class RecipesController: Controller
 	{
 		private readonly ILogger<InventoryController> _logger;
-
-		private Inventory inventory;
+		private IInventoryManager _inventory;
 		
 
 
-		public RecipesController(ILogger<InventoryController> logger)
+		public RecipesController(ILogger<InventoryController> logger,IInventoryManager inventory)
 		{
 			_logger = logger;
 			_logger.LogInformation("In inventory");
+			_inventory = inventory;
 			//initialize the inventory
-			inventory = new Inventory();
-			inventory.GetItemList();
-			inventory.GetRecipeList();	
-
+			_inventory.GetRecipeList();	
+			
 		}
 		
 		public ActionResult Recipes(){
 			_logger.LogInformation("Recipe call");
-			List<RecipeModel> reclist = this.inventory.RecipeList.Select(p=>new RecipeModel()
+			List<RecipeModel> reclist = _inventory.RecipeList.Select(p=>new RecipeModel()
 			{
 				id = p.ID,
 				name = p.Name,
@@ -49,21 +47,21 @@ namespace BRIM
 		}
 		
 		public ActionResult SubmitRecipe([FromBody]RecipeModel recipe){
-			int maxid = this.inventory.RecipeList.Select(p=>p.ID).Max();
+			int maxid = _inventory.RecipeList.Select(p=>p.ID).Max();
 			Recipe r = new Recipe();
 			r.ID = maxid;
 			r.Name = recipe.name;
 			r.ItemList =
-				(from item in inventory.ItemList
+				(from item in _inventory.ItemList
 				join comp in recipe.components
 				on item.ID equals comp.id
 				select ( new RecipeItem((Drink)item,Convert.ToDouble(comp.quantity))
 				)).ToList();
-			inventory.AddRecipe(r);
+			_inventory.AddRecipe(r);
 			return Content("Success");
 		}
 		public ActionResult ItemNames(){
-			List<RecipeComponentModel> names = this.inventory.ItemList.Select(p=>new RecipeComponentModel
+			List<RecipeComponentModel> names = _inventory.ItemList.Select(p=>new RecipeComponentModel
 			{
 				id = p.ID,
 				name = p.Name,
