@@ -10,9 +10,19 @@ namespace BRIM.BackendClassLibrary
 {
     public class POSManager : IPOSManager
     {
+        public JObject GetAllOrders()
+        {
+            var client = new RestClient("https://sandbox.dev.clover.com/v3/merchants/RYBHTZ2AMPQY1/orders?expand=lineItems%2ClineItems.modifications&access_token=8fe4215a-a338-4fbe-4f74-193919caa02c");
+            var request = new RestRequest(Method.GET);
+            request.AddHeader("Accept", "application/json");
+            IRestResponse response = client.Execute(request);
+
+            return JsonConvert.DeserializeObject<JObject>(response.Content);
+        }
+
         public JObject GetAllOrders(DateTime time)
         {
-            var client = new RestClient("https://sandbox.dev.clover.com/v3/merchants/RYBHTZ2AMPQY1/orders?filter=createdTime>="
+            var client = new RestClient("https://sandbox.dev.clover.com/v3/merchants/RYBHTZ2AMPQY1/orders?filter=createdTime>"
                                             + ((DateTimeOffset)time).ToUnixTimeSeconds()
                                             + "&expand=lineItems%2ClineItems.modifications&access_token=8fe4215a-a338-4fbe-4f74-193919caa02c");
             var request = new RestRequest(Method.GET);

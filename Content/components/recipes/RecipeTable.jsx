@@ -7,7 +7,7 @@ import RecipeCreationFab from './RecipeCreationFab.jsx';
 
 const useStyles = makeStyles((theme) => ({
     root: {
-        flexGrow: 1,
+        /*flexGrow: 1,*/
     },
     paper: {
         padding: theme.spacing(2),
@@ -59,22 +59,30 @@ export default function RecipeTable(props){
     const classes = useStyles();
 
     return (
-        <div className={classes.root}>
-            <Grid container justify="flex-start" alignItems="stretch" >
-                <Grid container item xs={10} direction="row"
-                    justify="space-around" >
-                    {state.recipes.map((row) => (
-                        <RecipeCard key={row.id} {...row}></RecipeCard>
-                        ))}
-                </Grid>
+        <Grid container className={classes.root}
+            direction="column"
+            justify="flex-start"
+            alignItems="stretch">
 
-                <Grid container item xs={1} alignItems="flex-end">
-                    <Grid item xs={12}> 
-                        <RecipeCreationFab onRecipeSubmit={loadRecipesFromServer}/>
+            <Grid item xs={12}>
+                <Grid container justify="flex-start" alignItems="stretch" >
+                    <Grid container item xs={12} direction="row"
+                        justify="flex start" >
+                        {state.recipes.map((row) => (
+                            <RecipeCard key={row.id} {...row}></RecipeCard>
+                            ))}
                     </Grid>
                 </Grid>
             </Grid>
-        </div>
+
+
+            <Grid container item xs={11} justify="flex-end">
+                <Grid item xs={1}> 
+                    <RecipeCreationFab onRecipeSubmit={loadRecipesFromServer}/>
+                </Grid>
+            </Grid>
+
+        </Grid>
     );
 
 }

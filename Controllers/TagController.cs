@@ -1,35 +1,37 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using bcl=BRIM.BackendClassLibrary;
+using BRIM.BackendClassLibrary;
 
 namespace BRIM
 {
 	public class TagController : Controller
 	{
-		public TagController(){
-			bcl.Inventory.GetTagList();	
+		private IInventoryManager _inventory;
+		public TagController(IInventoryManager inventory){
+			_inventory=inventory;
+			_inventory.GetTagList();	
 		}
 
 		public ActionResult GetTags()
 		{
 			return new JsonResult(new{
-				tags=bcl.Inventory.TagList.AsReadOnly()
+				tags=_inventory.TagList.AsReadOnly()
 			});
 		}
-		public ActionResult AddTag(bcl.Tag tag)
+		public ActionResult AddTag(Tag tag)
 		{
-			bcl.Inventory.AddTag(tag.Name);
+			_inventory.AddTag(tag.Name);
 			return Content("success");
 		}
-		public ActionResult DelTag(bcl.Tag tag)
+		public ActionResult DelTag(Tag tag)
 		{
-			bcl.Inventory.RemoveTag(tag.ID);
+			_inventory.RemoveTag(tag.ID);
 			return Content("success");
 		}
 		public class TagListModel
 		{
-			public IReadOnlyList<bcl.Tag> tags{get;set;}
+			public IReadOnlyList<Tag> tags{get;set;}
 		}
 	}
 }

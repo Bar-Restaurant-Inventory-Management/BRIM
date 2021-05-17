@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using React.AspNet;
+using BRIM.BackendClassLibrary;
 
 //namespace React.Sample.Webpack.CoreMvc
 namespace BRIM
@@ -29,6 +30,7 @@ namespace BRIM
 
 			services.AddReact();
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+			services.AddSingleton<IInventoryManager,Inventory>();
 
 			// Build the intermediate service provider then return it
 			services.BuildServiceProvider();
@@ -109,6 +111,13 @@ namespace BRIM
 					pattern: "inventory/deltag",
 					defaults: new {controller = "Tag", action = "DelTags"}
 				);
+				//Notifications
+				/*
+				endpoints.MapControllerRoute(
+					name:"notification",
+					pattern:"{controller=Notification}/{action=Index}"
+				);
+				*/
 				//default
 				endpoints.MapControllerRoute(
 					name: "default",

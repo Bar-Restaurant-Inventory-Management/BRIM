@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Drawer as MUIDrawer,
   ListItem,
@@ -8,6 +8,7 @@ import {
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import InboxIcon from "@material-ui/icons/MoveToInbox";
+import NtfcnSnackbar from './notifications/NtfcnSnackbar.jsx';
 import NtfcnDialog from './notifications/NtfcnDialog.jsx';
 import MailIcon from "@material-ui/icons/Mail";
 import { withRouter } from "react-router-dom";
@@ -15,7 +16,8 @@ import { withRouter } from "react-router-dom";
 //https://codesandbox.io/s/winter-brook-fnepe?file=/src/Drawer.jsx:0-1323
 const useStyles = makeStyles({
   drawer: {
-    width: "150px"
+    width: "150px",
+    marginLeft: "50px"
   }
 });
 
@@ -51,7 +53,6 @@ const NavDrawer = props => {
             </ListItem>
           );
         })}
-        <NtfcnDialog></NtfcnDialog>
       </List>
     </MUIDrawer>
   );

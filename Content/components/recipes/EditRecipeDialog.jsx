@@ -142,7 +142,7 @@ export default function EditRecipeDialog(props) {
 												<TextField
 													variant="filled"
 													type="number"
-													value={row.quantity}
+													defaultValue={row.quantity}
 													onChange={(event) => {
 														selections.comps[selections.comps.indexOf(row)].quantity = event.target.value;
 														console.log(selections.comps[selections.comps.indexOf(row)]);

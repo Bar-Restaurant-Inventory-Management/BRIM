@@ -10,7 +10,8 @@ import EditRecipe from './EditRecipeDialog.jsx'
 
 const useStyles = makeStyles({
   root: {
-    minWidth: 275,
+		minWidth: "200px",
+		margin: "10px",
   },
   bullet: {
     display: 'inline-block',

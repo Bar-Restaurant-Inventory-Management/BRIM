@@ -19,6 +19,7 @@ namespace BackendClassUnitTests
         private int latestTagID;
         //create Mock of Database manager
         private Mock<IDatabaseManager> mockDBManager = new Mock<IDatabaseManager>();
+        private Inventory inventory;
 
         public InventoryTests()
         {
@@ -336,7 +337,7 @@ namespace BackendClassUnitTests
 
             mockDBManager.Setup(x => x.getRecipes()).Returns(fakeDBRecipes);
             
-            //don't need full functionality for BRIM.BackendClassLibrary.Inventory tests, just the ability to verify
+            //don't need full functionality for inventory tests, just the ability to verify
             //that they were called
             mockDBManager.Setup(x => x.getDrinkStats(It.IsAny<int>()))
                 .Returns(new List<DrinkStat>());
@@ -362,7 +363,8 @@ namespace BackendClassUnitTests
             mockDBManager.Setup(x => x.incrementRecipeStat(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(true);
 
-            BRIM.BackendClassLibrary.Inventory.ReplaceDBManager(mockDBManager.Object);
+            inventory=new Inventory();
+            inventory.ReplaceDBManager(mockDBManager.Object);
         }
 
         [Fact]
@@ -370,10 +372,10 @@ namespace BackendClassUnitTests
             //Arrange
             string fakeDBItemsString = JsonConvert.SerializeObject(fakeDBItems);
             //Act
-            BRIM.BackendClassLibrary.Inventory.GetItemList();
+            inventory.GetItemList();
 
             //Assert
-            string resultOfGetString = JsonConvert.SerializeObject(BRIM.BackendClassLibrary.Inventory.ItemList);            
+            string resultOfGetString = JsonConvert.SerializeObject(inventory.ItemList);            
             Assert.Equal(fakeDBItemsString, resultOfGetString);
         }
 
@@ -392,7 +394,7 @@ namespace BackendClassUnitTests
             int expectedReturnCode = 0;
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.UpdateItem(updatedItem1);
+            int returnCode = inventory.UpdateItem(updatedItem1);
             
             //Assert
             mockDBManager.Verify(mock => mock.updateDrink(It.IsAny<Drink>()), Times.Once());
@@ -427,7 +429,7 @@ namespace BackendClassUnitTests
             int expectedReturnCode = 1;
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.UpdateItem(fakeItem);
+            int returnCode = inventory.UpdateItem(fakeItem);
 
             //assert
             mockDBManager.Verify(mock => mock.updateDrink(It.IsAny<Drink>()), Times.Once());
@@ -461,7 +463,7 @@ namespace BackendClassUnitTests
             string expectedNewItemString = JsonConvert.SerializeObject(newItem);
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.AddItem(newItem);
+            int returnCode = inventory.AddItem(newItem);
 
             //Assert
             mockDBManager.Verify(mock => mock.addDrink(It.IsAny<Drink>()), Times.Once());
@@ -498,7 +500,7 @@ namespace BackendClassUnitTests
             mockDBManager.Setup(x => x.addDrink(It.IsAny<Drink>())).Returns(false);
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.AddItem(newItem);
+            int returnCode = inventory.AddItem(newItem);
 
             //Assert
             mockDBManager.Verify(mock => mock.addDrink(It.IsAny<Drink>()), Times.Once());
@@ -516,7 +518,7 @@ namespace BackendClassUnitTests
             int expectedReturnCode = 0;
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.RemoveItem(itemToRemove);
+            int returnCode = inventory.RemoveItem(itemToRemove);
 
             //Assert
             mockDBManager.Verify(mock => mock.deleteDrink(It.IsAny<Drink>()), Times.Once());
@@ -533,7 +535,7 @@ namespace BackendClassUnitTests
             int expectedReturnCode = 1;
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.RemoveItem(itemToRemove);
+            int returnCode = inventory.RemoveItem(itemToRemove);
 
             //Assert
             mockDBManager.Verify(mock => mock.deleteDrink(It.IsAny<Drink>()), Times.Once());
@@ -548,10 +550,10 @@ namespace BackendClassUnitTests
             string fakeDBRecipesString = JsonConvert.SerializeObject(fakeDBRecipes);
 
             //Act
-            BRIM.BackendClassLibrary.Inventory.GetRecipeList();
+            inventory.GetRecipeList();
 
             //Assert
-            string resultOfGetString = JsonConvert.SerializeObject(BRIM.BackendClassLibrary.Inventory.RecipeList);
+            string resultOfGetString = JsonConvert.SerializeObject(inventory.RecipeList);
             Assert.Equal(fakeDBRecipesString, resultOfGetString);
         }
 
@@ -579,7 +581,7 @@ namespace BackendClassUnitTests
             string expectedNewRecipeString = JsonConvert.SerializeObject(newRecipe);
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.AddRecipe(newRecipe);
+            int returnCode = inventory.AddRecipe(newRecipe);
 
             //Assert
             mockDBManager.Verify(mock => 
@@ -629,7 +631,7 @@ namespace BackendClassUnitTests
             int newRecipeID = latestRecipeID + 1;
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.AddRecipe(newRecipe);
+            int returnCode = inventory.AddRecipe(newRecipe);
 
             //Assert
             Recipe addedRecipe = fakeDBRecipes.FirstOrDefault(x => x.ID == newRecipeID);
@@ -654,7 +656,7 @@ namespace BackendClassUnitTests
             string expectedUpdatedRecipeString = JsonConvert.SerializeObject(updatedRecipe);
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.UpdateRecipe(updatedRecipe);
+            int returnCode = inventory.UpdateRecipe(updatedRecipe);
 
             //Assert
             mockDBManager.Verify(mock => 
@@ -680,7 +682,7 @@ namespace BackendClassUnitTests
             int expectedReturnCode = 1;
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.UpdateRecipe(updatedRecipe);
+            int returnCode = inventory.UpdateRecipe(updatedRecipe);
 
             //Assert    
             mockDBManager.Verify(mock => 
@@ -719,7 +721,7 @@ namespace BackendClassUnitTests
             string updatedRecipeItemListString = JsonConvert.SerializeObject(updatedRecipe.ItemList);
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.UpdateRecipe(updatedRecipe);
+            int returnCode = inventory.UpdateRecipe(updatedRecipe);
 
             //Assert
             mockDBManager.Verify(mock => 
@@ -746,7 +748,7 @@ namespace BackendClassUnitTests
             string expectedUpdatedRecipeString = JsonConvert.SerializeObject(recipeToRemove);
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.RemoveRecipe(recipeToRemove);
+            int returnCode = inventory.RemoveRecipe(recipeToRemove);
 
             //Assert
             mockDBManager.Verify(mock => 
@@ -771,7 +773,7 @@ namespace BackendClassUnitTests
             mockDBManager.Setup(x => x.deleteRecipe(It.IsAny<int>())).Returns(false);
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.RemoveRecipe(recipeToRemove);
+            int returnCode = inventory.RemoveRecipe(recipeToRemove);
 
             //Assert
             mockDBManager.Verify(mock => 
@@ -787,10 +789,10 @@ namespace BackendClassUnitTests
             string fakeDBTagsString = JsonConvert.SerializeObject(fakeDBTags);
 
             //Act
-            BRIM.BackendClassLibrary.Inventory.GetTagList();
+            inventory.GetTagList();
 
             //Assert
-            string resultOfGetString = JsonConvert.SerializeObject(BRIM.BackendClassLibrary.Inventory.TagList);
+            string resultOfGetString = JsonConvert.SerializeObject(inventory.TagList);
             Assert.Equal(fakeDBTagsString, resultOfGetString);
         }
 
@@ -802,7 +804,7 @@ namespace BackendClassUnitTests
             int expectedReturnCode = 0;
 
             //Act 
-            int returnCode = BRIM.BackendClassLibrary.Inventory.AddTag(newTagName);
+            int returnCode = inventory.AddTag(newTagName);
 
             //Assert
             mockDBManager.Verify(mock => 
@@ -821,7 +823,7 @@ namespace BackendClassUnitTests
             mockDBManager.Setup(x => x.addTag(It.IsAny<string>())).Returns(-1);
 
             //Act 
-            int returnCode = BRIM.BackendClassLibrary.Inventory.AddTag(newTagName);
+            int returnCode = inventory.AddTag(newTagName);
 
             //Assert
             mockDBManager.Verify(mock => 
@@ -838,7 +840,7 @@ namespace BackendClassUnitTests
             int expectedReturnCode = 0;
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.RemoveTag(tagToDelete);
+            int returnCode = inventory.RemoveTag(tagToDelete);
 
             //Assert
             mockDBManager.Verify(mock => mock.deleteTag(It.IsAny<int>()), Times.Once());
@@ -856,7 +858,7 @@ namespace BackendClassUnitTests
             mockDBManager.Setup(x => x.deleteTag(It.IsAny<int>())).Returns(false);
 
             //Act
-            int returnCode = BRIM.BackendClassLibrary.Inventory.RemoveTag(tagToDelete);
+            int returnCode = inventory.RemoveTag(tagToDelete);
 
             //Assert
             mockDBManager.Verify(mock => mock.deleteTag(It.IsAny<int>()), Times.Once());
@@ -870,7 +872,7 @@ namespace BackendClassUnitTests
             Drink fakeDrink = (Drink) fakeDBItems[0];
 
             //Act
-            BRIM.BackendClassLibrary.Inventory.GetDrinkStats(fakeDrink);
+            inventory.GetDrinkStats(fakeDrink);
 
             //Assert
             mockDBManager.Verify(mock => mock.getDrinkStats(fakeDrink.ID), Times.Once());
@@ -882,7 +884,7 @@ namespace BackendClassUnitTests
             Recipe fakeRecipe = fakeDBRecipes[0];
 
             //Act
-            BRIM.BackendClassLibrary.Inventory.GetRecipeStats(fakeRecipe);
+            inventory.GetRecipeStats(fakeRecipe);
 
             //Assert
             mockDBManager.Verify(mock => mock.getRecipeStats(fakeRecipe.ID), Times.Once());
@@ -898,7 +900,7 @@ namespace BackendClassUnitTests
             string expectedEDString = "2021-01-10";
 
             //Act
-            BRIM.BackendClassLibrary.Inventory.GetDrinkStatsByDate(fakeDrink, startDate, endDate);
+            inventory.GetDrinkStatsByDate(fakeDrink, startDate, endDate);
 
             //Assert
             mockDBManager.Verify(mock => mock.getDrinkStatsByDateRange
@@ -915,7 +917,7 @@ namespace BackendClassUnitTests
             string expectedEDString = "2021-01-10";
 
             //Act
-            BRIM.BackendClassLibrary.Inventory.GetRecipeStatsByDate(fakeRecipe, startDate, endDate);
+            inventory.GetRecipeStatsByDate(fakeRecipe, startDate, endDate);
 
             //Assert
             mockDBManager.Verify(mock => mock.getRecipeStatsByDateRange
@@ -931,7 +933,7 @@ namespace BackendClassUnitTests
             string expectedEDString = "2021-01-10";
 
             //Act
-            BRIM.BackendClassLibrary.Inventory.GetAllDrinkStats(startDate, endDate);
+            inventory.GetAllDrinkStats(startDate, endDate);
 
             //Assert
             mockDBManager.Verify(mock => mock.getAllDrinkStatsByDateRange
@@ -947,7 +949,7 @@ namespace BackendClassUnitTests
             string expectedEDString = "2021-01-10";
 
             //Act
-            BRIM.BackendClassLibrary.Inventory.GetAllRecipeStats(startDate, endDate);
+            inventory.GetAllRecipeStats(startDate, endDate);
 
             //Assert
             mockDBManager.Verify(mock => mock.getAllRecipeStatsByDateRange
