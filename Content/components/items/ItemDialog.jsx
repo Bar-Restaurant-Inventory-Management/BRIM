@@ -88,7 +88,7 @@ export default function ItemDialog(props) {
     }
     let combined={
       name:values.name,
-      est:values.estimate,
+      estimate:values.estimate,
       ideal:values.idealLevel,
       par:values.parLevel,
       brand:values.brand,
