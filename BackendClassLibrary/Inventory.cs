@@ -169,14 +169,16 @@ namespace BRIM.BackendClassLibrary
         /// <param name="message"></param>
         public void parseAPIPOSUpdate(JObject message)
         {
-            JToken msg = message;
+            //JToken msg = message["elements"];
             //double varianceMultiplier = 0.15;
 
-            foreach (JObject order in msg)
+            foreach (JObject order in message["elements"])
             {
-                foreach(JObject lineitem in order["lineItems"])
+                JToken lineitem = order["lineItems"];
+
+                foreach (JObject item in lineitem["elements"])
                 {
-                    string name = lineitem["name"].ToString();
+                    string name = item["name"].ToString();
                     double updateAmt = 0.0;
 
                     //check if the lineItem ordered is a base drink and update
@@ -189,9 +191,9 @@ namespace BRIM.BackendClassLibrary
                     if (drinkFound != -1)
                     {
                         //TODO: do this if mods exist, else send notifiction
-                        if (lineitem.ContainsKey("modifications"))
+                        if (item.ContainsKey("modifications"))
                         {
-                            JArray modifications = (JArray)lineitem["modifications"];
+                            JArray modifications = (JArray)item["modifications"];
 
                             //should only be one, but maybe there is something im not thinking of,
                             //can change from a loop later
@@ -212,10 +214,11 @@ namespace BRIM.BackendClassLibrary
 
                                     int quantitySold;
 
-                                    if (lineitem.ContainsKey("quantitySold"))
+                                    if (item.ContainsKey("quantitySold"))
                                     {
-                                        quantitySold = (int)lineitem["quantitySold"];
-                                    } else
+                                        quantitySold = (int)item["quantitySold"];
+                                    }
+                                    else
                                     {
                                         quantitySold = 1;
 
@@ -240,12 +243,14 @@ namespace BRIM.BackendClassLibrary
                             databaseManager.updateDrink(updatedDrink);
                             ItemList[drinkFound] = updatedDrink;
                             updateAmt = 0.0;
-                        } else
+                        }
+                        else
                         {
                             string mes = "Order " + order["id"] + " must be manually updated. No modifications given.";
                             notificationManager.AddNotification(mes);
                         }
-                    } else if (recipieFound != -1)
+                    }
+                    else if (recipieFound != -1)
                     {
                         //same process as above, but for recipies
                         //recipies may or may not have modifications
@@ -258,8 +263,9 @@ namespace BRIM.BackendClassLibrary
 
                             if (order.ContainsKey("quantitySold"))
                             {
-                                amtOrdered = (int)lineitem["quantitySold"];
-                            } else
+                                amtOrdered = (int)item["quantitySold"];
+                            }
+                            else
                             {
                                 amtOrdered = 1;
 
@@ -271,7 +277,7 @@ namespace BRIM.BackendClassLibrary
                             databaseManager.incrementRecipeStat(orderedRecipe.ID, DateTime.Now.ToString("yyyy-MM-dd"), amtOrdered);
 
                             //TODI: Check if this exists, else send notification or possibly count instances of recipe
-                            JArray modifications = (JArray)lineitem["modifications"];
+                            JArray modifications = (JArray)item["modifications"];
                             if (modifications.Count > 0)
                             {
                                 string modName = modifications[0]["name"].ToString();
@@ -296,7 +302,7 @@ namespace BRIM.BackendClassLibrary
                                     }
                                 }
                             }
-                            
+
                             //update every drink that was a part of the recipe
                             foreach (RecipeItem part in parts)
                             {
@@ -340,7 +346,8 @@ namespace BRIM.BackendClassLibrary
                                 updateAmt = 0.0;
                             }
                         }
-                    } else
+                    }
+                    else
                     {
                         //flag user for unknown items the user has to update
                         string mes = name + " is unknown. Please update manually.";

@@ -30,6 +30,8 @@ namespace BRIM
 
 		public static void TimerElapsed(object sender, ElapsedEventArgs e)
         {
+			inventory.GetItemList();
+			inventory.GetRecipeList();
 			string path = Path.Combine(AppContext.BaseDirectory, "LastUpdate.txt");
 			DateTime current = DateTime.Now;
 			JObject json;
@@ -44,7 +46,7 @@ namespace BRIM
             }
 
 			//send json to the posUpdates method in inventory
-			//inventory.parseAPIPOSUpdate(json);
+			inventory.parseAPIPOSUpdate(json);
 
 			File.WriteAllText(path, current.ToString());
         }
