@@ -90,7 +90,7 @@ export default function ItemDialog(props) {
     let submitUrl="/inventory/newitem"
     let combined={
       name:values.newItemName,
-      estimate:values.newItemLoEst,
+      estimate:values.newItemEst,
       ideal:values.newItemIdeal,
       par:values.newItemPar,
       brand:values.newItemBrand,
