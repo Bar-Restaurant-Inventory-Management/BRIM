@@ -69,8 +69,8 @@ export default function StatisticsPage(props) {
                             variant="inline"
                             format="MM/dd/yyyy"
                             margin="normal"
-                            id="start-date-stat-picker"
-                            label="Start Date"
+                            id="end-date-stat-picker"
+                            label="End Date"
                             value={selectedDate}
                             onChange={handleDateChange}
                             KeyboardButtonProps={{
