@@ -25,15 +25,15 @@ export default function ItemDialog(props) {
     list:[]
   })
   const [values, setValues] = React.useState({
-    newItemName: '',
-    newItemEst: '',
-    newItemIdeal: '',
-    newItemPar: '',
-    newItemBrand: '',
-    newItemPrice: '',
-    newItemBotSize: '',
-    newItemUPC: '',
-    newItemVintage: false,
+    newItemName:null, 
+    newItemEst:null, 
+    newItemIdeal: null,
+    newItemPar: null,
+    newItemBrand:null, 
+    newItemPrice:null, 
+    newItemBotSize:null, 
+    newItemUPC:null, 
+    newItemVintage: 0,
     newItemUnits: 1,
     newItemID: -1,
     newItemTags:[],
@@ -110,6 +110,8 @@ export default function ItemDialog(props) {
       props.onItemSubmit();
       console.log("done");
     }
+    console.log("combined");
+    console.log(JSON.stringify(combined));
     xhr.send(JSON.stringify(combined))
     setOpen(false);
   }
