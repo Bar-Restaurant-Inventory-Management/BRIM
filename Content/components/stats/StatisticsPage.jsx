@@ -1,4 +1,4 @@
-﻿import 'date-fns';
+import 'date-fns';
 import DateFnsUtils from '@date-io/date-fns';
 
 import Grid from '@material-ui/core/Grid';
@@ -17,6 +17,8 @@ export default function StatisticsPage(props) {
     });
 
     const [selectedDate, setSelectedDate] = React.useState(new Date());
+    const [startDate, setStartDate] = React.useState(new Date());
+    const [endDate, setEndDate] = React.useState(new Date());
 
     let dataurl = "/inventory/itemnames"
     let xhr = new XMLHttpRequest();
@@ -30,9 +32,16 @@ export default function StatisticsPage(props) {
     };
     xhr.send();
 
-    const handleDateChange = (date) => {
-        setSelectedDate(date);
+
+    const handleStartDateChange = (date) => {
+        setStartDate(date);
     };
+
+    const handleEndDateChange = (date) => {
+        setEndDate(date);
+    };
+
+
 
     return (
         <Grid container>
@@ -55,15 +64,15 @@ export default function StatisticsPage(props) {
                             margin="normal"
                             id="start-date-stat-picker"
                             label="Start Date"
-                            value={selectedDate}
-                            onChange={handleDateChange}
+                            value={startDate}
+                            onChange={handleStartDateChange}
                             KeyboardButtonProps={{
                                 'aria-label': 'change date',
                             }}
                             />
                     </Grid>
 
-                    <Grid item xs={3}>
+                    <Grid item xs={4}>
                         <KeyboardDatePicker
                             disableToolbar
                             variant="inline"
@@ -71,8 +80,8 @@ export default function StatisticsPage(props) {
                             margin="normal"
                             id="end-date-stat-picker"
                             label="End Date"
-                            value={selectedDate}
-                            onChange={handleDateChange}
+                            value={endDate}
+                            onChange={handleEndDateChange}
                             KeyboardButtonProps={{
                                 'aria-label': 'change date',
                             }}
