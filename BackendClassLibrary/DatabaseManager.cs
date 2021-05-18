@@ -125,11 +125,39 @@ namespace BRIM.BackendClassLibrary
         //Creates then runs an insert query
         public bool addDrink(Drink drink)
         {
-            string query = @"insert into brim.drinks (name, estimate, measurementUnit, parLevel, idealLevel, bottleSize, brand, bottlesPerCase, vintage) values ('"
-                + drink.Name + "', '" + drink.Estimate + "', '" + drink.Measurement + "', '" + drink.ParLevel + "', '" + drink.IdealLevel
-                + "', '" + drink.BottleSize + "', '" + drink.Brand + "', '" + drink.UnitsPerCase + "', '" + drink.Vintage + "')";
-            int newDrinkID = this.runSqlInsertCommandReturnID(query); //TODO: Update drink to have this ID
-
+            int rowsAffected, newDrinkID;
+            using (MySqlCommand cmd = new MySqlCommand(@"insert into brim.drinks (name, estimate, measurementUnit, parLevel, idealLevel, bottleSize, brand, bottlesPerCase, vintage) values 
+                                                    (@Name, @Estimate, @Measurement, @ParLevel, @IdealLevel, @BottleSize, @Brand, @BottlesPerCase, @Vintage)", conn))
+            {
+                try
+                {
+                    cmd.Parameters.AddWithValue("@Name", drink.Name);
+                    cmd.Parameters.AddWithValue("@Estimate", drink.Estimate);
+                    cmd.Parameters.AddWithValue("@Measurement", drink.Measurement);
+                    cmd.Parameters.AddWithValue("@ParLevel", drink.ParLevel);
+                    cmd.Parameters.AddWithValue("@IdealLevel", drink.IdealLevel);
+                    cmd.Parameters.AddWithValue("@BottleSize", drink.BottleSize);
+                    cmd.Parameters.AddWithValue("@Brand", drink.Brand);
+                    cmd.Parameters.AddWithValue("@BottlesPerCase", drink.BottleSize);
+                    if (drink.Vintage != null)
+                    {
+                        cmd.Parameters.AddWithValue("@Vintage", drink.Vintage);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Vintage", DBNull.Value);
+                    }
+                    conn.Open();
+                    rowsAffected = cmd.ExecuteNonQuery();
+                    newDrinkID = (int)(cmd.LastInsertedId);
+                    conn.Close();
+                } catch(MySqlException ex)
+                {
+                    Console.WriteLine("MYSQL ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
+                    return false;
+                }
+            }
+            
             if (newDrinkID == -1)
             {
                 Console.WriteLine("Error: Drink could not be added");
@@ -155,15 +183,48 @@ namespace BRIM.BackendClassLibrary
         //Creates then runs an update query
         public bool updateDrink(Drink drink)
         {
-            //TODO: Re-add vintage
-            string query = @"update brim.drinks set name = '" + drink.Name + "', estimate = '" + drink.Estimate + "', measurementUnit = '" 
-                + drink.Measurement + "', parLevel = '" + drink.ParLevel + "', idealLevel = '" + drink.IdealLevel + "', bottleSize = '"
-                + drink.BottleSize + "', brand = '" + drink.Brand + "', bottlesPerCase = '" + drink.UnitsPerCase + "', vintage = '" + drink.Vintage 
-                + "' where drinkID = '" + drink.ID + "'";
-            bool result = this.runSqlInsertUpdateOrDeleteCommand(query);
-
-            if (!result)
+            int rowsAffected;
+            using (MySqlCommand cmd = new MySqlCommand(@"update brim.drinks set name = @Name, estimate = @Estimate, measurementUnit = @Measurement, parLevel = @ParLevel, 
+                                                            idealLevel = @IdealLevel, bottleSize = @BottleSize, brand = @Brand, bottlesPerCase = @BottlesPerCase, vintage = @Vintage 
+                                                            where drinkID = @DrinkID", conn))
             {
+                try
+                {
+                    cmd.Parameters.AddWithValue("@Name", drink.Name);
+                    cmd.Parameters.AddWithValue("@Estimate", drink.Estimate);
+                    cmd.Parameters.AddWithValue("@Measurement", drink.Measurement);
+                    cmd.Parameters.AddWithValue("@ParLevel", drink.ParLevel);
+                    cmd.Parameters.AddWithValue("@IdealLevel", drink.IdealLevel);
+                    cmd.Parameters.AddWithValue("@BottleSize", drink.BottleSize);
+                    cmd.Parameters.AddWithValue("@Brand", drink.Brand);
+                    cmd.Parameters.AddWithValue("@BottlesPerCase", drink.BottleSize);
+                    if (drink.Vintage != null)
+                    {
+                        cmd.Parameters.AddWithValue("@Vintage", drink.Vintage);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Vintage", DBNull.Value);
+                    }
+                    cmd.Parameters.AddWithValue("@DrinkID", drink.ID);
+                    conn.Open();
+                    rowsAffected = cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine("MYSQL ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
+                    return false;
+                }
+            }
+
+            if (rowsAffected == 0)
+            {
+                Console.WriteLine("The Command was Valid, but no Rows where affected: ");
+            }
+            else if (rowsAffected < 0)
+            {
+                Console.WriteLine("The Given Query was not for an Update, or Delete Command: ");
                 Console.WriteLine("Error: Drink could not be updated");
                 return false;
             }

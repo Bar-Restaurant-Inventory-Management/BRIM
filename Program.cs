@@ -15,6 +15,7 @@ namespace BRIM
 	public class Program
 	{
 		static POSManager pos = new POSManager();
+		static Inventory inventory = new Inventory();
 
 		public static void Main(string[] args)
 		{
@@ -31,17 +32,19 @@ namespace BRIM
         {
 			string path = Path.Combine(AppContext.BaseDirectory, "LastUpdate.txt");
 			DateTime current = DateTime.Now;
+			JObject json;
 
 			if (File.Exists(path))
             {
 				DateTime lastUpdate = DateTime.Parse(File.ReadAllText(path));
-				JObject json = pos.GetAllOrders(lastUpdate);
+				json = pos.GetAllOrders(lastUpdate);
 			} else
             {
-				JObject json = pos.GetAllOrders();
+				json = pos.GetAllOrders();
             }
 
 			//send json to the posUpdates method in inventory
+			//inventory.parseAPIPOSUpdate(json);
 
 			File.WriteAllText(path, current.ToString());
         }
