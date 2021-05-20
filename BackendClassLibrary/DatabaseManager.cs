@@ -76,7 +76,7 @@ namespace BRIM.BackendClassLibrary
 
             if (rowsAffected == 0) {
                 Console.WriteLine("The Command was Valid, but no Rows where affected: ");
-            } else {
+            } else if (rowsAffected < 0){
                 Console.WriteLine("The Given Query was not for an Update, or Delete Command: ");
                 return false;
             }
