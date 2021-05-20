@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Timers;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace BRIM.BackendClassLibrary
@@ -12,7 +14,10 @@ namespace BRIM.BackendClassLibrary
     //The main class of the program. 
     public class Inventory:IInventoryManager
     {
-        public List<Item> ItemList{get;set;} //holds all items registered to this BRIM instance
+        private POSManager pos;
+        private Timer posUpdates;
+
+        public List<Item> ItemList {get;set;} //holds all items registered to this BRIM instance
         public List<Recipe> RecipeList {get;set;} //holds all of the recipes for this BRIM instance
         public List<Tag> TagList {get;set;} //holds all of the tags for this BRIM instance
         public string Country;
@@ -20,10 +25,17 @@ namespace BRIM.BackendClassLibrary
         public NotificationManager notificationManager;
         public Inventory()
         {
-            notificationManager= new NotificationManager();
-            ItemList=new List<Item>();
+            notificationManager = new NotificationManager();
+            ItemList = new List<Item>();
             RecipeList = new List<Recipe>();
-            TagList=new List<Tag>();
+            TagList = new List<Tag>();
+            pos = new POSManager();
+
+            posUpdates = new Timer();   //This Construction of Timer makes it run on a separate thread
+			posUpdates.Interval = 300000; //5 minutes in milliseconds
+			posUpdates.AutoReset = true;
+			posUpdates.Elapsed += new ElapsedEventHandler(TimerElapsed);
+			posUpdates.Start();
         }
 
 
@@ -34,6 +46,29 @@ namespace BRIM.BackendClassLibrary
         public void ReplaceDBManager(IDatabaseManager databasemanager)
         {
             databaseManager=databasemanager;
+        }
+
+        private void TimerElapsed(object sender, ElapsedEventArgs e)
+        {
+			GetItemList();
+			GetRecipeList();
+			string path = Path.Combine(AppContext.BaseDirectory, "LastUpdate.txt");
+			DateTime current = DateTime.Now;
+			JObject json;
+
+			if (File.Exists(path))
+            {
+				DateTime lastUpdate = DateTime.Parse(File.ReadAllText(path));
+				json = pos.GetAllOrders(lastUpdate);
+			} else
+            {
+				json = pos.GetAllOrders();
+            }
+
+			//send json to the posUpdates method in inventory
+			parseAPIPOSUpdate(json);
+
+			File.WriteAllText(path, current.ToString());
         }
 
         /// <summary>
