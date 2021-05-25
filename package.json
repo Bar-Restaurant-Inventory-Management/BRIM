@@ -25,6 +25,7 @@
     "react-router-dom": "^5.0.0",
     "react-select": "^3.2.0",
     "reactstrap": "^8.9.0",
+    "recharts": "^2.0.9",
     "styled-components": "^4.0.0",
     "xmlhttprequest": "^1.8.0"
   },
