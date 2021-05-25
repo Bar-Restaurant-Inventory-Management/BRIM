@@ -8,6 +8,7 @@ import {
     MuiPickersUtilsProvider,
     KeyboardDatePicker,
 } from '@material-ui/pickers';
+import Chart from './Chart.jsx';
 
 
 export default function StatisticsPage(props) {
@@ -89,7 +90,9 @@ export default function StatisticsPage(props) {
                     </Grid>
 
                 </MuiPickersUtilsProvider>
-
+                <Grid container item xs={10}> 
+                    <Chart />
+                </Grid>
             </Grid>
         </Grid>
     );
