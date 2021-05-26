@@ -2,46 +2,39 @@
 
 const data = [
     {
-        name: 'Page A',
-        uv: 4000,
-        pv: 2400,
-        amt: 2400,
+        name: '5/30/21',
+        TestDrink1: 12,
+
     },
     {
-        name: 'Page B',
-        uv: 3000,
-        pv: 1398,
-        amt: 2210,
+        name: '5/31/21',
+        TestDrink1: 31,
+
     },
     {
-        name: 'Page C',
-        uv: 2000,
-        pv: 9800,
-        amt: 2290,
+        name: '6/1/21',
+        TestDrink1: 3,
+
     },
     {
-        name: 'Page D',
-        uv: 2780,
-        pv: 3908,
-        amt: 2000,
+        name: '6/2/21',
+        TestDrink1: 5,
+
     },
     {
-        name: 'Page E',
-        uv: 1890,
-        pv: 4800,
-        amt: 2181,
+        name: '6/3/21',
+        TestDrink1: 7,
+
     },
     {
-        name: 'Page F',
-        uv: 2390,
-        pv: 3800,
-        amt: 2500,
+        name: '6/4/21',
+        TestDrink1: 0,
+
     },
     {
-        name: 'Page G',
-        uv: 3490,
-        pv: 4300,
-        amt: 2100,
+        name: '6/5/21',
+        TestDrink1: 2,
+
     },
 ];
 
@@ -65,8 +58,7 @@ export default function Chart(props) {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="pv" stroke="#8884d8" activeDot={{ r: 8 }} />
-                <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
+                <Line type="monotone" dataKey="TestDrink1" stroke="#82ca9d" />
             </LineChart>
         </ResponsiveContainer>
     )

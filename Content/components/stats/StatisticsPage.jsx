@@ -17,7 +17,6 @@ export default function StatisticsPage(props) {
         items: [],
     });
 
-    const [selectedDate, setSelectedDate] = React.useState(new Date());
     const [startDate, setStartDate] = React.useState(new Date());
     const [endDate, setEndDate] = React.useState(new Date());
 
@@ -65,6 +64,8 @@ export default function StatisticsPage(props) {
                             margin="normal"
                             id="start-date-stat-picker"
                             label="Start Date"
+                            disableFuture={true}
+                            autoOk={true}
                             value={startDate}
                             onChange={handleStartDateChange}
                             KeyboardButtonProps={{
@@ -81,6 +82,8 @@ export default function StatisticsPage(props) {
                             margin="normal"
                             id="end-date-stat-picker"
                             label="End Date"
+                            disableFuture={true}
+                            autoOk={true}
                             value={endDate}
                             onChange={handleEndDateChange}
                             KeyboardButtonProps={{
