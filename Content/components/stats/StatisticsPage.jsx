@@ -66,6 +66,7 @@ export default function StatisticsPage(props) {
                             label="Start Date"
                             disableFuture={true}
                             autoOk={true}
+                            maxDate={endDate}
                             value={startDate}
                             onChange={handleStartDateChange}
                             KeyboardButtonProps={{
@@ -84,6 +85,7 @@ export default function StatisticsPage(props) {
                             label="End Date"
                             disableFuture={true}
                             autoOk={true}
+                            minDate={startDate}
                             value={endDate}
                             onChange={handleEndDateChange}
                             KeyboardButtonProps={{
