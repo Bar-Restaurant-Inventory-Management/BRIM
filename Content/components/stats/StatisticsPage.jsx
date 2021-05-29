@@ -1,6 +1,6 @@
 import 'date-fns';
 import DateFnsUtils from '@date-io/date-fns';
-
+import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import TextField from '@material-ui/core/TextField';
@@ -10,8 +10,21 @@ import {
 } from '@material-ui/pickers';
 import Chart from './Chart.jsx';
 
+const useStyles = makeStyles({
+    dropdown: {
+        marginTop: "1rem",
+        marginBottom: "1rem",
+    },
+    datepicker: {
+        marginTop: "1rem",
+        marginBottom: "1rem",
+        width: "100%",
+    },
+});
 
 export default function StatisticsPage(props) {
+    const classes = useStyles();
+
 
     let [state, updateState] = React.useState({
         items: [],
@@ -41,23 +54,23 @@ export default function StatisticsPage(props) {
         setEndDate(date);
     };
 
-
-
     return (
         <Grid container>
-            <Grid container item xs={10}> 
+            <Grid container item xs={12} md={10} justify="space-evenly"> 
                 <Grid item xs={3}> 
                     <Autocomplete
+                        className={classes.dropdown}
                         id="Inventory Item"
                         options={state.items}
                         getOptionLabel={(option) => option.name}
-                        renderInput={(params) => <TextField {...params} label="Combo box" variant="outlined" />}
+                        renderInput={(params) => <TextField {...params} label="Inventory Item" variant="outlined" />}
                         />
                 </Grid>
                 <MuiPickersUtilsProvider utils={DateFnsUtils}>
 
                     <Grid item xs={3}>
                         <KeyboardDatePicker
+                            className={classes.datepicker}
                             disableToolbar
                             variant="inline"
                             format="MM/dd/yyyy"
@@ -75,8 +88,9 @@ export default function StatisticsPage(props) {
                             />
                     </Grid>
 
-                    <Grid item xs={4}>
+                    <Grid item xs={3}>
                         <KeyboardDatePicker
+                            className={classes.datepicker}
                             disableToolbar
                             variant="inline"
                             format="MM/dd/yyyy"
@@ -93,12 +107,13 @@ export default function StatisticsPage(props) {
                             }}
                         />
                     </Grid>
-
                 </MuiPickersUtilsProvider>
-                <Grid container item xs={10}> 
-                    <Chart />
-                </Grid>
             </Grid>
+
+            <Grid container item xs={10} lg={11}>
+                <Chart />
+            </Grid>
+
         </Grid>
     );
 }
