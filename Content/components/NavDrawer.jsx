@@ -11,6 +11,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import InsertChartIcon from '@material-ui/icons/InsertChart';
 import LocalBarIcon from '@material-ui/icons/LocalBar';
 import LibraryBooksIcon from '@material-ui/icons/LibraryBooks';
+import InboxIcon from "@material-ui/icons/MoveToInbox";
 import { withRouter } from "react-router-dom";
 
 //https://codesandbox.io/s/winter-brook-fnepe?file=/src/Drawer.jsx:0-1323
