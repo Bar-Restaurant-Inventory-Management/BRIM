@@ -46,6 +46,7 @@ const NavDrawer = props => {
       onClick:()=>history.push("/tags")
     },
   ];
+
   return (
     <MUIDrawer variant="permanent" className={classes.drawer}>
       <List>
