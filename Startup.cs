@@ -124,7 +124,14 @@ namespace BRIM
 					pattern: "{path?}",
 					new {controller = "Inventory", action = "Index"}
 				);
-				
+
+				//Stats Actions
+				endpoints.MapControllerRoute(
+					name: "drink_stats_by_date",
+					pattern: "inventory/drinkstatsbydate",
+					defaults: new { controller = "Statistics", action = "GetDrinkStatsByDate" }
+				);
+
 				//endpoints.MapControllerRoute("default", "{path?}", new { controller = "Home", action = "Index" });
 				//endpoints.MapControllerRoute("comments-root", "comments", new { controller = "Home", action = "Index" });
 				//endpoints.MapControllerRoute("comments", "comments/page-{page}", new { controller = "Home", action = "Comments" });

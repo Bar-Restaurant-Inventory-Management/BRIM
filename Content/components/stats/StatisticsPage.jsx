@@ -49,8 +49,21 @@ export default function StatisticsPage(props) {
         xhr.send();
     }
 
+    const getDrinkStataByDate = () => {
+        let dataurl = "inventory/drinkstatsbydate"
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', dataurl, true);
+
+        xhr.onload = () => {
+            let test = JSON.parse(xhr.responseText);
+            console.log(test);
+        };
+        xhr.send();
+    }
+
     useEffect(() => {
         loadItemsFromServer()
+        getDrinkStataByDate()
     }, []);
 
     return (
