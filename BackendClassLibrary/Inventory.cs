@@ -5,27 +5,70 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Timers;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace BRIM.BackendClassLibrary
 {
     //The main class of the program. 
-    public class Inventory
+    public class Inventory:IInventoryManager
     {
-        public List<Item> ItemList = new List<Item>(); //holds all items registered to this BRIM instance
-        public List<Recipe> RecipeList = new List<Recipe>(); //holds all of the recipes for this BRIM instance
-        public List<Tag> TagList = new List<Tag>(); //holds all of the tags for this BRIM instance
-        public string Country;
-        public IDatabaseManager databaseManager;
+        private POSManager pos;
+        private Timer posUpdates;
 
-        // Default Constructor, makes its own DatabaseManager
-        public Inventory() {
-            this.databaseManager = new DatabaseManager();
+        public List<Item> ItemList {get;set;} //holds all items registered to this BRIM instance
+        public List<Recipe> RecipeList {get;set;} //holds all of the recipes for this BRIM instance
+        public List<Tag> TagList {get;set;} //holds all of the tags for this BRIM instance
+        public string Country;
+        public IDatabaseManager databaseManager = new DatabaseManager();
+        public NotificationManager notificationManager;
+        public Inventory()
+        {
+            notificationManager = new NotificationManager();
+            ItemList = new List<Item>();
+            RecipeList = new List<Recipe>();
+            TagList = new List<Tag>();
+            pos = new POSManager();
+
+            posUpdates = new Timer();   //This Construction of Timer makes it run on a separate thread
+			posUpdates.Interval = 300000; //5 minutes in milliseconds
+			posUpdates.AutoReset = true;
+			posUpdates.Elapsed += new ElapsedEventHandler(TimerElapsed);
+			posUpdates.Start();
         }
 
-        //  Overloaded Constructor, takes IDatabaseManager instance (For Mocking when Unit Testing)
-        public Inventory(IDatabaseManager dbManager) {
-            this.databaseManager = dbManager;
+
+        /// <summary>
+        /// Replaces the existing database manager with a new one, replaces the old overloaded contructor
+        /// </summary>
+        /// <param name="databasemanager"></param>
+        public void ReplaceDBManager(IDatabaseManager databasemanager)
+        {
+            databaseManager=databasemanager;
+        }
+
+        private void TimerElapsed(object sender, ElapsedEventArgs e)
+        {
+			GetItemList();
+			GetRecipeList();
+			string path = Path.Combine(AppContext.BaseDirectory, "LastUpdate.txt");
+			DateTime current = DateTime.Now;
+			JObject json;
+
+			if (File.Exists(path))
+            {
+				DateTime lastUpdate = DateTime.Parse(File.ReadAllText(path));
+				json = pos.GetAllOrders(lastUpdate);
+			} else
+            {
+				json = pos.GetAllOrders();
+            }
+
+			//send json to the posUpdates method in inventory
+			parseAPIPOSUpdate(json);
+
+			File.WriteAllText(path, current.ToString());
         }
 
         /// <summary>
@@ -39,25 +82,25 @@ namespace BRIM.BackendClassLibrary
             //make sure status is recalculated to reflect any changes in Quantity
             updateItem.CalculateStatus(); 
             
-            bool result = this.databaseManager.updateDrink(updateItem);
+            bool result = databaseManager.updateDrink(updateItem);
 
             if (!result)
             {
                 Console.WriteLine("Error: Item Update Failed");
 
                 string mes = updateItem.Name + " could not be updated";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
 
             //Similar to Recipe updates, delete all Tag entries and readd them for simplicity
-            if (!this.databaseManager.deleteDrinkTagsByDrinkID(updateItem.ID))
+            if (!databaseManager.deleteDrinkTagsByDrinkID(updateItem.ID))
             {
                 Console.WriteLine("Error: Drink Tag Entry Deletion Failed. Stopping here");
 
                 string mes = updateItem.Name + " could not be updated";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -66,7 +109,7 @@ namespace BRIM.BackendClassLibrary
             foreach (Tag T in updateItem.Tags)
             {
                 int tagID = T.ID;
-                result = this.databaseManager.addDrinkTag(updateItem.ID, tagID);
+                result = databaseManager.addDrinkTag(updateItem.ID, tagID);
 
                 if (!result)
                 {
@@ -74,7 +117,7 @@ namespace BRIM.BackendClassLibrary
                     + T.Name + "' on item '" + updateItem.Name + "'. Stopping here");
 
                     string mes = updateItem.Name + " could not be updated";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
 
                     return 1;
                 }
@@ -92,7 +135,7 @@ namespace BRIM.BackendClassLibrary
         public int AddItem(Item i)
         {
             Drink newItem = i as Drink;
-            bool result = this.databaseManager.addDrink(newItem);
+            bool result = databaseManager.addDrink(newItem);
             string mes = "";
             
             if (!result)
@@ -100,7 +143,7 @@ namespace BRIM.BackendClassLibrary
                 Console.WriteLine("Error: Item Addition Failed");
 
                 mes = newItem.Name + " could not be added";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -108,12 +151,12 @@ namespace BRIM.BackendClassLibrary
             //add in the tags associated with that drink if there are any
             foreach (Tag T in newItem.Tags)
             {
-                if (!this.databaseManager.addDrinkTag(newItem.ID, T.ID))
+                if (!databaseManager.addDrinkTag(newItem.ID, T.ID))
                 {
                     Console.WriteLine("Error: Tag could not be added");
 
                     mes = T.Name + " could not be added";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
                     
                     return 1;
                 }
@@ -131,14 +174,14 @@ namespace BRIM.BackendClassLibrary
         public int RemoveItem(Item i)
         {
             Drink removeItem = i as Drink;
-            bool result = this.databaseManager.deleteDrink(removeItem);
+            bool result = databaseManager.deleteDrink(removeItem);
 
             if (!result)
             {
                 Console.WriteLine("Error: Item removal failed");
 
                 string mes = removeItem.Name + " could not be removed";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -146,7 +189,7 @@ namespace BRIM.BackendClassLibrary
             return 0;
         }
 
-        public int PurchseItem(Recipe r)
+        public int PurchaseItem(Recipe r)
         {
             return 0;
         }
@@ -161,14 +204,16 @@ namespace BRIM.BackendClassLibrary
         /// <param name="message"></param>
         public void parseAPIPOSUpdate(JObject message)
         {
-            JToken msg = message;
+            //JToken msg = message["elements"];
             //double varianceMultiplier = 0.15;
 
-            foreach (JObject order in msg)
+            foreach (JObject order in message["elements"])
             {
-                foreach(JObject lineitem in order["lineItems"])
+                JToken lineitem = order["lineItems"];
+
+                foreach (JObject item in lineitem["elements"])
                 {
-                    string name = lineitem["name"].ToString();
+                    string name = item["name"].ToString();
                     double updateAmt = 0.0;
 
                     //check if the lineItem ordered is a base drink and update
@@ -176,79 +221,120 @@ namespace BRIM.BackendClassLibrary
                     //Modifications always come in for ordering a specific drink item, 
                     //but in the case of cocktails(recipies) there is a possibility of there 
                     //being no modification
-                    //TODO: If not in recipies or drinks flag it for manual update
                     int drinkFound = ItemList.FindIndex(x => x.Name == name);
                     int recipieFound = RecipeList.FindIndex(x => x.Name == name);
                     if (drinkFound != -1)
                     {
-                        JArray modifications = (JArray)lineitem["modifications"];
-
-                        //should only be one, but maybe there is something im not thinking of,
-                        //can change from a loop later
-                        foreach (JObject mod in modifications)
+                        //TODO: do this if mods exist, else send notifiction
+                        if (item.ContainsKey("modifications"))
                         {
-                            string modName = mod["name"].ToString();
+                            JArray modifications = (JArray)item["modifications"];
 
-                            //if it has parenthasis then assume it is the modification that tells us the portion size
-                            if (modName.Contains("("))
+                            //should only be one, but maybe there is something im not thinking of,
+                            //can change from a loop later
+                            foreach (JObject mod in modifications)
                             {
-                                string[] temppour = modName.Split('(');
-                                temppour = temppour[1].Split(')');
-                                string[] pour = temppour[0].Split(' ');
+                                string modName = mod["name"].ToString();
 
-                                double pourAmt = Convert.ToDouble(pour[0]);
-                                string pourMeasurement = pour[1];
-                                int quantitySold = (int)lineitem["quantitySold"];
-
-                                if (pourMeasurement == "oz")
+                                //if it has parenthasis then assume it is the modification that tells us the portion size
+                                if (modName.Contains("("))
                                 {
-                                    pourAmt = pourAmt * 29.5735; //conversion for fluid oz to ml
+                                    string[] temppour = modName.Split('(');
+                                    temppour = temppour[1].Split(')');
+                                    string[] pour = temppour[0].Split(' ');
+
+                                    double pourAmt = Convert.ToDouble(pour[0]);
+                                    string pourMeasurement = pour[1];
+                                    //TODO: check if this field is present, else send notification
+
+                                    int quantitySold;
+
+                                    if (item.ContainsKey("quantitySold"))
+                                    {
+                                        quantitySold = (int)item["quantitySold"];
+                                    }
+                                    else
+                                    {
+                                        quantitySold = 1;
+
+                                        string mes = "Order " + order["id"] + " may not have updated accurately. No quantity sold provided.";
+                                        notificationManager.AddNotification(mes);
+                                    }
+
+                                    if (pourMeasurement == "oz")
+                                    {
+                                        pourAmt = pourAmt * 29.5735; //conversion for fluid oz to ml
+                                    }
+
+                                    //setup the total amount that should have been poured
+                                    updateAmt += pourAmt * quantitySold;
                                 }
-
-                                //setup the total amount that should have been poured
-                                updateAmt += pourAmt * quantitySold;
                             }
+                            //update DB for amount of drink ordered for that day
+                            databaseManager.incrementDrinkStat(ItemList[drinkFound].ID, DateTime.Now.ToString("yyyy-MM-dd"), updateAmt);
+
+                            Drink updatedDrink = (Drink)orderItemUpdateProcedure(ItemList[drinkFound], updateAmt);
+
+                            databaseManager.updateDrink(updatedDrink);
+                            ItemList[drinkFound] = updatedDrink;
+                            updateAmt = 0.0;
                         }
-                        //update DB for amount of drink ordered for that day
-                        databaseManager.incrementDrinkStat(ItemList[drinkFound].ID, DateTime.Now.ToString("yyyy-MM-dd"), updateAmt);
-
-                        Drink updatedDrink = (Drink) orderItemUpdateProcedure(ItemList[drinkFound], updateAmt);
-
-                        databaseManager.updateDrink(updatedDrink);
-                        ItemList[drinkFound] = updatedDrink;
-                        updateAmt = 0.0;
-                    } else if (recipieFound != -1)
+                        else
+                        {
+                            string mes = "Order " + order["id"] + " must be manually updated. No modifications given.";
+                            notificationManager.AddNotification(mes);
+                        }
+                    }
+                    else if (recipieFound != -1)
                     {
                         //same process as above, but for recipies
                         //recipies may or may not have modifications
                         Recipe orderedRecipe = RecipeList[recipieFound];
                         List<RecipeItem> parts = orderedRecipe.ItemList;
-                        int amtOrdered = (int)lineitem["quantitySold"];
 
-                        //increment the amount of the recipie ordered
-                        databaseManager.incrementRecipeStat(orderedRecipe.ID, DateTime.Now.ToString("yyyy-MM-dd"), amtOrdered);
-
-                        JArray modifications = (JArray)lineitem["modifications"];
-                        if (modifications.Count > 0)
+                        if (order.ContainsKey("modifications"))
                         {
-                            string modName = modifications[0]["name"].ToString();
+                            int amtOrdered;
 
-                            if (modName != orderedRecipe.BaseLiquor)
+                            if (order.ContainsKey("quantitySold"))
                             {
-                                //process the modification
-                                int modIndex = RecipeList.FindIndex(x => x.Name == modName);
+                                amtOrdered = (int)item["quantitySold"];
+                            }
+                            else
+                            {
+                                amtOrdered = 1;
 
-                                if (modIndex != -1)
+                                string mes = "Order " + order["id"] + " may not have updated properly, no quantity sold specified";
+                                notificationManager.AddNotification(mes);
+                            }
+
+                            //increment the amount of the recipie ordered
+                            databaseManager.incrementRecipeStat(orderedRecipe.ID, DateTime.Now.ToString("yyyy-MM-dd"), amtOrdered);
+
+                            //TODI: Check if this exists, else send notification or possibly count instances of recipe
+                            JArray modifications = (JArray)item["modifications"];
+                            if (modifications.Count > 0)
+                            {
+                                string modName = modifications[0]["name"].ToString();
+
+                                if (modName != orderedRecipe.BaseLiquor)
                                 {
-                                    int baseIndex = parts.FindIndex(x => x.Item.Name == orderedRecipe.BaseLiquor);
-                                    double q = parts[baseIndex].Quantity;
-                                    parts.RemoveAt(baseIndex);
-                                    parts.Add(new RecipeItem(ItemList[modIndex] as Drink, q));
-                                } else
-                                {
-                                    //Flag for the user because modification is unknown
-                                    string mes = modName + " is unknown. Must be updated manually.";
-                                    NotificationManager.AddNotification(mes);
+                                    //process the modification
+                                    int modIndex = RecipeList.FindIndex(x => x.Name == modName);
+
+                                    if (modIndex != -1)
+                                    {
+                                        int baseIndex = parts.FindIndex(x => x.Item.Name == orderedRecipe.BaseLiquor);
+                                        double q = parts[baseIndex].Quantity;
+                                        parts.RemoveAt(baseIndex);
+                                        parts.Add(new RecipeItem(ItemList[modIndex] as Drink, q));
+                                    }
+                                    else
+                                    {
+                                        //Flag for the user because modification is unknown
+                                        string mes = modName + " is unknown. Must be updated manually.";
+                                        notificationManager.AddNotification(mes);
+                                    }
                                 }
                             }
 
@@ -261,18 +347,46 @@ namespace BRIM.BackendClassLibrary
                                 //update Db for amount of drink ordered that day
                                 databaseManager.incrementDrinkStat(part.Item.ID, DateTime.Now.ToString("yyyy-MM-dd"), updateAmt);
 
-                                Drink updatedDrink = (Drink) orderItemUpdateProcedure(part.Item, updateAmt);
+                                Drink updatedDrink = (Drink)orderItemUpdateProcedure(part.Item, updateAmt);
 
                                 databaseManager.updateDrink(updatedDrink);
                                 ItemList[drinkFound] = updatedDrink;
                                 updateAmt = 0.0;
                             }
                         }
-                    } else
+                        else
+                        {
+                            string mes = "Order " + order["id"] + " may not have updated properly, no quantity sold specified";
+                            notificationManager.AddNotification(mes);
+
+                            //update by assuming only one was ordered
+                            int amtOrdered = 1;
+
+                            //increment the amount of the recipie ordered
+                            databaseManager.incrementRecipeStat(orderedRecipe.ID, DateTime.Now.ToString("yyyy-MM-dd"), amtOrdered);
+
+                            //update every drink that was a part of the recipe
+                            foreach (RecipeItem part in parts)
+                            {
+                                //calculate and update every item
+                                updateAmt += part.Quantity * amtOrdered;
+
+                                //update Db for amount of drink ordered that day
+                                databaseManager.incrementDrinkStat(part.Item.ID, DateTime.Now.ToString("yyyy-MM-dd"), updateAmt);
+
+                                Drink updatedDrink = (Drink)orderItemUpdateProcedure(part.Item, updateAmt);
+
+                                databaseManager.updateDrink(updatedDrink);
+                                ItemList[drinkFound] = updatedDrink;
+                                updateAmt = 0.0;
+                            }
+                        }
+                    }
+                    else
                     {
                         //flag user for unknown items the user has to update
                         string mes = name + " is unknown. Please update manually.";
-                        NotificationManager.AddNotification(mes);
+                        notificationManager.AddNotification(mes);
                     }
                 }
             }
@@ -302,15 +416,15 @@ namespace BRIM.BackendClassLibrary
                 if (updatedItem.Status == status.belowIdeal)
                 {
                     string mes = updatedItem.Name + " is below ideal level";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
                 } else if (updatedItem.Status == status.belowPar)
                 {
                     string mes = updatedItem.Name + " is below par level";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
                 } else if (updatedItem.Status == status.empty)
                 {
                     string mes = updatedItem.Name + " is empty";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
                 }
             }
 
@@ -328,7 +442,7 @@ namespace BRIM.BackendClassLibrary
         public int GetItemList()
         {
             List<Item> drinksList = new List<Item>();
-            drinksList = this.databaseManager.getDrinks();
+            drinksList = databaseManager.getDrinks();
             ItemList = drinksList;
 
             return 0;
@@ -338,7 +452,7 @@ namespace BRIM.BackendClassLibrary
         public int GetTagList()
         {
             List<Tag> tagList = new List<Tag>();
-            tagList = this.databaseManager.getTags();
+            tagList = databaseManager.getTags();
             TagList = tagList;
 
             return 0;
@@ -347,13 +461,13 @@ namespace BRIM.BackendClassLibrary
         //Adds a tag to the tag table
         public int AddTag(string tagName)
         {
-            int tagID = this.databaseManager.addTag(tagName);
+            int tagID = databaseManager.addTag(tagName);
             if (tagID == -1)
             {
                 Console.WriteLine("Error: Tag Addition Failed");
 
                 string mes = tagName + " could not be added";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -367,14 +481,14 @@ namespace BRIM.BackendClassLibrary
         //Removes a tag from the tag table
         public int RemoveTag(int tagID)
         {
-            bool result = this.databaseManager.deleteTag(tagID);
+            bool result = databaseManager.deleteTag(tagID);
 
             if (!result)
             {
                 Console.WriteLine("Error: Tag removal failed");
 
                 string mes = "Tag with " + tagID + " could not be removed";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -404,7 +518,7 @@ namespace BRIM.BackendClassLibrary
         public int GetRecipeList()
         {
             List<Recipe> recipeList = new List<Recipe>();
-            recipeList = this.databaseManager.getRecipes();
+            recipeList = databaseManager.getRecipes();
             RecipeList = recipeList;
 
             return 0;
@@ -425,19 +539,19 @@ namespace BRIM.BackendClassLibrary
                 string mes = newRecipe.Name + " could not be added." + 
                 "\n Error: New Recipe Item List has one or more Invalid Entries. "+
                 "Not Adding New Recipe Name, Base Liquor, Or Ingredients Into Database";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
 
             //add entry into Recipe Table
-            recipeID = this.databaseManager.addRecipe(newRecipe.Name, newRecipe.BaseLiquor);
+            recipeID = databaseManager.addRecipe(newRecipe.Name, newRecipe.BaseLiquor);
             if (recipeID == -1)
             {
                 Console.WriteLine("Error: Recipe Entry Addition Failed. Stopping here");
 
                 string mes = newRecipe.Name + " could not be added";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -447,7 +561,7 @@ namespace BRIM.BackendClassLibrary
             foreach(RecipeItem component in newRecipe.ItemList) {
                 int itemID = component.Item.ID;
                 double itemQuantity = component.Quantity;
-                itemListResult = this.databaseManager.addDrinkRecipe(recipeID, itemID, itemQuantity);
+                itemListResult = databaseManager.addDrinkRecipe(recipeID, itemID, itemQuantity);
 
                 if (itemListResult == -1) {
                     Console.WriteLine("Error: DrinkRecipe Entry Addition Failed For Entry with '"
@@ -455,7 +569,7 @@ namespace BRIM.BackendClassLibrary
 
                     string mes = component.Item.Name + " could not be added to the recipie." +
                     "\n Recipe Ingredient Data Entry Stopped There.";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
 
                     return 1;
                 }
@@ -481,7 +595,7 @@ namespace BRIM.BackendClassLibrary
                 string mes = updatedRecipe.Name + " could not be added." + 
                 "\n Error: Updated Recipe Item List has one or more Invalid Entries. " +
                 "Not Updating Recipe Name, Base Liqour, or Ingredients In Database.";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -491,22 +605,22 @@ namespace BRIM.BackendClassLibrary
             string updatedName = updatedRecipe.Name;
             string updatedBase = updatedRecipe.BaseLiquor;
             
-            if (!this.databaseManager.updateRecipe(recipeID, updatedName, updatedBase))
+            if (!databaseManager.updateRecipe(recipeID, updatedName, updatedBase))
             {
                 Console.WriteLine("Error: Recipe Entry Update Failed. Stopping here");
 
                 string mes = updatedName + " could not be updated";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
             
             //deleting old DrinkRecipe table entries for this Recipe
-            if (!this.databaseManager.deleteDrinkRecipesByRecipeID(recipeID)) {
+            if (!databaseManager.deleteDrinkRecipesByRecipeID(recipeID)) {
                 Console.WriteLine("Error: DrinkRecipe Entry Deletion Failed. Stopping here");
 
                 string mes = updatedName + " could not be updated";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
@@ -516,14 +630,14 @@ namespace BRIM.BackendClassLibrary
             foreach(RecipeItem component in updatedRecipe.ItemList) {
                 int itemID = component.Item.ID;
                 double itemQuantity = component.Quantity;
-                itemListResult = this.databaseManager.addDrinkRecipe(recipeID, itemID, itemQuantity);
+                itemListResult = databaseManager.addDrinkRecipe(recipeID, itemID, itemQuantity);
 
                 if (itemListResult == -1) {
                     Console.WriteLine("Error: DrinkRecipe Entry Addition Failed For Entry with '"
                     + itemID + "' ItemID and '" + itemQuantity + "' failed. Stopping here");
 
                     string mes = component.Item.Name + " could not be updated";
-                    NotificationManager.AddNotification(mes);
+                    notificationManager.AddNotification(mes);
 
                     return 1;
                 }
@@ -534,11 +648,11 @@ namespace BRIM.BackendClassLibrary
 
         //Check to make Sure An Added or Updated Recipe's DrinkRecipe is valid before adding it in 
         private bool validateDrinkRecipeList(List<RecipeItem> itemList) {
-            this.GetItemList();    //ItemList must be populated and uptoDate First                    
+            GetItemList();    //ItemList must be populated and uptoDate First                    
             foreach(RecipeItem component in itemList) {
                 int itemID = component.Item.ID;
                 double itemQuantity = component.Quantity;
-                int drinkFound = this.ItemList.FindIndex(x => x.ID == itemID);
+                int drinkFound = ItemList.FindIndex(x => x.ID == itemID);
 
                 if (drinkFound == -1 || itemQuantity < 0) {
                     return false;
@@ -562,21 +676,21 @@ namespace BRIM.BackendClassLibrary
 
             //deleting old DrinkRecipes table entries for this Recipe
             //Should be done first since drinkrecipe Table is the one with the constraints
-            if (!this.databaseManager.deleteDrinkRecipesByRecipeID(recipeID)) {
+            if (!databaseManager.deleteDrinkRecipesByRecipeID(recipeID)) {
                 Console.WriteLine("Error: DrinkRecipe Entry Deletion Failed. Stopping here");
 
                 string mes = unwantedRecipe.Name + " could not be deleted";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }
 
             // delete recip entry from recipes table 
-            if (!this.databaseManager.deleteRecipe(recipeID)) {
+            if (!databaseManager.deleteRecipe(recipeID)) {
                 Console.WriteLine("Error: DrinkRecipe Entry Deletion Failed. Stopping here");
 
                 string mes = unwantedRecipe.Name + " could not be deleted";
-                NotificationManager.AddNotification(mes);
+                notificationManager.AddNotification(mes);
 
                 return 1;
             }

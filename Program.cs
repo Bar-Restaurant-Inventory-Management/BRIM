@@ -3,14 +3,18 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using BRIM.BackendClassLibrary;
-//why is This Using Directive unneccesary? Is it because it's not in a 
-//separate Project, but rather a free-floating file in the project that contain the Class Library? 
+using System.Timers;
+using Newtonsoft.Json.Linq;
+using System.IO;
 
 //namespace React.Sample.Webpack.CoreMvc
 namespace BRIM
 {
 	public class Program
 	{
+		//static POSManager pos = new POSManager();
+		//static Inventory inventory = new Inventory();
+
 		public static void Main(string[] args)
 		{
 			BuildWebHost(args).Run();

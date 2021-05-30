@@ -13,6 +13,7 @@ namespace BRIM.BackendClassLibrary
         //Should probably move this somewhere more secure eventually
         private static string connString = @"SERVER=68.84.78.85; PORT=3306; DATABASE=brim; UID=dev; PASSWORD=devpassword; convert zero datetime=True";
         private MySqlConnection conn = new MySqlConnection(connString);
+        private object connectionLock = new Object();
 
         //runs any given Select Query on the Database and returns the results in a DataTable
         //Should only be used by other public methods within the Helper (unless you guys thing other wise)
@@ -22,21 +23,29 @@ namespace BRIM.BackendClassLibrary
             MySqlCommand cmd = new MySqlCommand(query, conn);
             MySqlDataAdapter adapter = new MySqlDataAdapter(cmd);
             int rowsReturned;
-
-            //Is there a reason we open and close for every query instead of just keeping it open?
-            //beats me, but I'll ask the others later
-            try {
-                conn.Open();
-                rowsReturned = adapter.Fill(dt);
-                conn.Close();
-            } catch (MySqlException ex) {
-                Console.WriteLine("MYSQL ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
-                rowsReturned = 0;
+            
+            lock (connectionLock)
+            {
+                try {
+                    conn.Open();
+                    rowsReturned = adapter.Fill(dt);
+                    conn.Close();
+                } catch (Exception ex) {
+                    if (ex is MySqlException) {
+                        Console.WriteLine("MYSQL ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
+                    } else {
+                        Console.WriteLine("ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
+                    }
+                    rowsReturned = 0;
+                    conn.Close();
+                }
             }
 
             if (rowsReturned == 0)
             {
                 Console.WriteLine("The database query returned no data");
+            } else {
+                Console.WriteLine("The database query DID data");
             }
             return dt;
         }
@@ -46,16 +55,25 @@ namespace BRIM.BackendClassLibrary
         private bool runSqlInsertUpdateOrDeleteCommand(string query)
         {
             int rowsAffected;
-            try {
-                MySqlCommand cmd = new MySqlCommand(query, conn);
-                conn.Open();
-                rowsAffected = cmd.ExecuteNonQuery();
-                conn.Close();
-            } catch (MySqlException ex) {
-                Console.WriteLine("MYSQL ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
-                return false;
-            }
             
+            lock (connectionLock)
+            {
+                try {
+                    MySqlCommand cmd = new MySqlCommand(query, conn);
+                    conn.Open();
+                    rowsAffected = cmd.ExecuteNonQuery();
+                    conn.Close();
+                } catch (Exception ex) {
+                    if (ex is MySqlException) {
+                        Console.WriteLine("MYSQL ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
+                    } else {
+                        Console.WriteLine("ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
+                    }
+                    conn.Close();
+                    return false;
+                }
+            }
+
             if (rowsAffected == 0) {
                 Console.WriteLine("The Command was Valid, but no Rows where affected: ");
             } else if (rowsAffected < 0){
@@ -75,19 +93,26 @@ namespace BRIM.BackendClassLibrary
         private int runSqlInsertCommandReturnID(string query)
         {
             int rowsAffected, newValueID;
-            try {
-                MySqlCommand cmd = new MySqlCommand(query, conn);
-                conn.Open();
-                rowsAffected = cmd.ExecuteNonQuery();
-                //WARNING, This method of getting the ID is the t but is NOT entirely thread safe
-                newValueID = (int) (cmd.LastInsertedId);
-                conn.Close();
-            } catch (MySqlException ex) {
-                Console.WriteLine("MYSQL ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
-                return -1;
+            lock (connectionLock) {
+                try {
+                    MySqlCommand cmd = new MySqlCommand(query, conn);
+                    conn.Open();
+                    rowsAffected = cmd.ExecuteNonQuery();
+                    //WARNING, This method of getting the ID is the t but is NOT entirely thread safe
+                    newValueID = (int) (cmd.LastInsertedId);
+                    conn.Close();
+                } catch (Exception ex) {
+                    if (ex is MySqlException) {
+                        Console.WriteLine("MYSQL ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
+                    } else {
+                        Console.WriteLine("ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
+                    }
+                    conn.Close();
+                    return -1;
+                }
             }
-            
-            if (rowsAffected < 0){
+
+            if (rowsAffected < 0) {
                 Console.WriteLine("The Given Query was not for an Insert, Update, or Delete Command: ");
                 return -1;
             }
@@ -125,11 +150,39 @@ namespace BRIM.BackendClassLibrary
         //Creates then runs an insert query
         public bool addDrink(Drink drink)
         {
-            string query = @"insert into brim.drinks (name, estimate, measurementUnit, parLevel, idealLevel, bottleSize, brand, bottlesPerCase, vintage) values ('"
-                + drink.Name + "', '" + drink.Estimate + "', '" + drink.Measurement + "', '" + drink.ParLevel + "', '" + drink.IdealLevel
-                + "', '" + drink.BottleSize + "', '" + drink.Brand + "', '" + drink.UnitsPerCase + "', '" + drink.Vintage + "')";
-            int newDrinkID = this.runSqlInsertCommandReturnID(query); //TODO: Update drink to have this ID
-
+            int rowsAffected, newDrinkID;
+            using (MySqlCommand cmd = new MySqlCommand(@"insert into brim.drinks (name, estimate, measurementUnit, parLevel, idealLevel, bottleSize, brand, bottlesPerCase, vintage) values 
+                                                    (@Name, @Estimate, @Measurement, @ParLevel, @IdealLevel, @BottleSize, @Brand, @BottlesPerCase, @Vintage)", conn))
+            {
+                try
+                {
+                    cmd.Parameters.AddWithValue("@Name", drink.Name);
+                    cmd.Parameters.AddWithValue("@Estimate", drink.Estimate);
+                    cmd.Parameters.AddWithValue("@Measurement", drink.Measurement.ToString());
+                    cmd.Parameters.AddWithValue("@ParLevel", drink.ParLevel);
+                    cmd.Parameters.AddWithValue("@IdealLevel", drink.IdealLevel);
+                    cmd.Parameters.AddWithValue("@BottleSize", drink.BottleSize);
+                    cmd.Parameters.AddWithValue("@Brand", drink.Brand);
+                    cmd.Parameters.AddWithValue("@BottlesPerCase", drink.BottleSize);
+                    if (drink.Vintage != null)
+                    {
+                        cmd.Parameters.AddWithValue("@Vintage", drink.Vintage);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Vintage", DBNull.Value);
+                    }
+                    conn.Open();
+                    rowsAffected = cmd.ExecuteNonQuery();
+                    newDrinkID = (int)(cmd.LastInsertedId);
+                    conn.Close();
+                } catch(MySqlException ex)
+                {
+                    Console.WriteLine("MYSQL ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
+                    return false;
+                }
+            }
+            
             if (newDrinkID == -1)
             {
                 Console.WriteLine("Error: Drink could not be added");
@@ -155,15 +208,48 @@ namespace BRIM.BackendClassLibrary
         //Creates then runs an update query
         public bool updateDrink(Drink drink)
         {
-            //TODO: Re-add vintage
-            string query = @"update brim.drinks set name = '" + drink.Name + "', estimate = '" + drink.Estimate + "', measurementUnit = '" 
-                + drink.Measurement + "', parLevel = '" + drink.ParLevel + "', idealLevel = '" + drink.IdealLevel + "', bottleSize = '"
-                + drink.BottleSize + "', brand = '" + drink.Brand + "', bottlesPerCase = '" + drink.UnitsPerCase + "', vintage = '" + drink.Vintage 
-                + "' where drinkID = '" + drink.ID + "'";
-            bool result = this.runSqlInsertUpdateOrDeleteCommand(query);
-
-            if (!result)
+            int rowsAffected;
+            using (MySqlCommand cmd = new MySqlCommand(@"update brim.drinks set name = @Name, estimate = @Estimate, measurementUnit = @Measurement, parLevel = @ParLevel, 
+                                                            idealLevel = @IdealLevel, bottleSize = @BottleSize, brand = @Brand, bottlesPerCase = @BottlesPerCase, vintage = @Vintage 
+                                                            where drinkID = @DrinkID", conn))
             {
+                try
+                {
+                    cmd.Parameters.AddWithValue("@Name", drink.Name);
+                    cmd.Parameters.AddWithValue("@Estimate", drink.Estimate);
+                    cmd.Parameters.AddWithValue("@Measurement", drink.Measurement.ToString());
+                    cmd.Parameters.AddWithValue("@ParLevel", drink.ParLevel);
+                    cmd.Parameters.AddWithValue("@IdealLevel", drink.IdealLevel);
+                    cmd.Parameters.AddWithValue("@BottleSize", drink.BottleSize);
+                    cmd.Parameters.AddWithValue("@Brand", drink.Brand);
+                    cmd.Parameters.AddWithValue("@BottlesPerCase", drink.BottleSize);
+                    if (drink.Vintage != null)
+                    {
+                        cmd.Parameters.AddWithValue("@Vintage", drink.Vintage);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Vintage", DBNull.Value);
+                    }
+                    cmd.Parameters.AddWithValue("@DrinkID", drink.ID);
+                    conn.Open();
+                    rowsAffected = cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine("MYSQL ERROR OCCURED! ERROR MESSAGE: " + ex.Message);
+                    return false;
+                }
+            }
+
+            if (rowsAffected == 0)
+            {
+                Console.WriteLine("The Command was Valid, but no Rows where affected: ");
+            }
+            else if (rowsAffected < 0)
+            {
+                Console.WriteLine("The Given Query was not for an Update, or Delete Command: ");
                 Console.WriteLine("Error: Drink could not be updated");
                 return false;
             }

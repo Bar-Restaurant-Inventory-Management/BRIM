@@ -53,7 +53,7 @@ export default function ItemTableBasic(props) {
       updateState({
         items: data.items
       });
-      console.log(data.items);
+      //console.log(data.items);
       
     };
     xhr.send();
@@ -80,7 +80,7 @@ export default function ItemTableBasic(props) {
   });
   */
 
-      console.log(state.items);
+      //console.log(state.items);
   return (
 
       <Grid container className={classes.root} spacing={3}

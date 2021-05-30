@@ -9,6 +9,11 @@ namespace BRIM.BackendClassLibrary
 {
     public interface IPOSManager
     {
+        //General method to get all orders ever. This is used when a 
+        //LastUpdate.txt file cannot be found to tell the application when information
+        //was last read for an update.
+        JObject GetAllOrders();
+
         //Takes in a DateTime and grabs all orders on or ater that time
         //Returns the JObject that comes from the the REST request to Clover
         JObject GetAllOrders(DateTime time);

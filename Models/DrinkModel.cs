@@ -1,20 +1,23 @@
 using System;
+using System.Collections.Generic;
+using BRIM.BackendClassLibrary;
 namespace BRIM{
 
 
 
 public class DrinkSubmissionModel{
-	public string Name{get;set;}
-	public string Est{get;set;}
-	public string Ideal{get;set;}
-	public string Par{get;set;}
-	public string Brand{get;set;}
-	public string Price{get;set;}
-	public string Size{get;set;}
-	public string Upc{get;set;}
-	public string Vintage{get;set;}
-	public string Units{get;set;}
-	public int Id{get;set;} 
+	public string name{get;set;}
+	public double estimate{get;set;}
+	public double ideal{get;set;}
+	public double par{get;set;}
+	public string brand{get;set;}
+	public double price{get;set;}
+	public double size{get;set;}
+	public double upc{get;set;}
+	public double vintage{get;set;}
+	public int units{get;set;}
+	public int id{get;set;} 
+	public List<Tag> tags{get;set;}
 
 }
 

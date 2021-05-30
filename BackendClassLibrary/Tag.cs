@@ -9,8 +9,8 @@ namespace BRIM.BackendClassLibrary
 {
     public class Tag
     {
-        public int ID;
-        public string Name;
+        public int ID {get;set;}
+        public string Name{get;set;}
 
         public Tag() { }
 

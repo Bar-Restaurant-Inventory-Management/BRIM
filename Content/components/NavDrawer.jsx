@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Drawer as MUIDrawer,
   ListItem,
@@ -39,6 +39,11 @@ const NavDrawer = props => {
       text: "Statistics",
       icon: <InsertChartIcon />,
       onClick: () => history.push("/stat")
+    },
+    {
+      text: "Tags",
+      icon: <InboxIcon />,
+      onClick:()=>history.push("/tags")
     },
   ];
   return (

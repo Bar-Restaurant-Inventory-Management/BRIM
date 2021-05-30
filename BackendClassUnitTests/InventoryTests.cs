@@ -363,7 +363,8 @@ namespace BackendClassUnitTests
             mockDBManager.Setup(x => x.incrementRecipeStat(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(true);
 
-            inventory = new Inventory(mockDBManager.Object);
+            inventory=new Inventory();
+            inventory.ReplaceDBManager(mockDBManager.Object);
         }
 
         [Fact]

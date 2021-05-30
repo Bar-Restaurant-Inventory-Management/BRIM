@@ -35,7 +35,6 @@ export default function StatisticsPage(props) {
     const [endDate, setEndDate] = React.useState(new Date());
 
     const loadItemsFromServer = () => {
-
         let dataurl = "/inventory/itemnames"
         let xhr = new XMLHttpRequest();
         xhr.open('GET', dataurl, true);
@@ -53,7 +52,6 @@ export default function StatisticsPage(props) {
     useEffect(() => {
         loadItemsFromServer()
     }, []);
-
 
     return (
         <Grid container>
