@@ -30,8 +30,12 @@ export default function StatisticsPage(props) {
         items: [],
     });
 
+    var previousWeek = new Date();
+    previousWeek.setDate( previousWeek.getDate() - 4 );
+
     const [inventoryItem, setInventoryItem] = React.useState(null);
-    const [startDate, setStartDate] = React.useState(new Date());
+    const [startDate, setStartDate] = React.useState(previousWeek);
+    console.log(new Date().getDate() - 4);
     const [endDate, setEndDate] = React.useState(new Date());
 
     const loadItemsFromServer = () => {
