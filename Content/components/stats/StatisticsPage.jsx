@@ -38,6 +38,7 @@ export default function StatisticsPage(props) {
         let dataurl = "/inventory/itemnames"
         let xhr = new XMLHttpRequest();
         xhr.open('GET', dataurl, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
 
         xhr.onload = () => {
             let data = JSON.parse(xhr.responseText);
@@ -49,21 +50,22 @@ export default function StatisticsPage(props) {
         xhr.send();
     }
 
-    const getDrinkStataByDate = () => {
+    const getDrinkStatsByDate = () => {
         let dataurl = "inventory/drinkstatsbydate"
         let xhr = new XMLHttpRequest();
         xhr.open('GET', dataurl, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
 
         xhr.onload = () => {
-            let test = JSON.parse(xhr.responseText);
-            console.log(test);
+            let stats = JSON.parse(xhr.responseText);
+            console.log(stats);
         };
         xhr.send();
     }
 
     useEffect(() => {
         loadItemsFromServer()
-        getDrinkStataByDate()
+        getDrinkStatsByDate()
     }, []);
 
     return (

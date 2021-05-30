@@ -43,9 +43,9 @@ namespace BRIM.BackendClassLibrary
 
             if (rowsReturned == 0)
             {
-                Console.WriteLine("The database query returned no data");
+                //Console.WriteLine("The database query returned no data");
             } else {
-                Console.WriteLine("The database query DID data");
+                //Console.WriteLine("The database query DID data");
             }
             return dt;
         }
