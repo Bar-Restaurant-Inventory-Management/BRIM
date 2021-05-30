@@ -1,4 +1,5 @@
 import 'date-fns';
+import React, { useEffect } from 'react';
 import DateFnsUtils from '@date-io/date-fns';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -25,34 +26,34 @@ const useStyles = makeStyles({
 export default function StatisticsPage(props) {
     const classes = useStyles();
 
-
     let [state, updateState] = React.useState({
         items: [],
     });
 
+    const [inventoryItem, setInventoryItem] = React.useState(null);
     const [startDate, setStartDate] = React.useState(new Date());
     const [endDate, setEndDate] = React.useState(new Date());
 
-    let dataurl = "/inventory/itemnames"
-    let xhr = new XMLHttpRequest();
-    xhr.open('GET', dataurl, true);
+    const loadItemsFromServer = () => {
 
-    xhr.onload = () => {
-        let data = JSON.parse(xhr.responseText);
-        updateState({
-            items: data.items
-        });
-    };
-    xhr.send();
+        let dataurl = "/inventory/itemnames"
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', dataurl, true);
 
+        xhr.onload = () => {
+            let data = JSON.parse(xhr.responseText);
+            updateState({
+                items: data.items
+            });
+            setInventoryItem(data.items[0])
+        };
+        xhr.send();
+    }
 
-    const handleStartDateChange = (date) => {
-        setStartDate(date);
-    };
+    useEffect(() => {
+        loadItemsFromServer()
+    }, []);
 
-    const handleEndDateChange = (date) => {
-        setEndDate(date);
-    };
 
     return (
         <Grid container>
@@ -63,6 +64,10 @@ export default function StatisticsPage(props) {
                         id="Inventory Item"
                         options={state.items}
                         getOptionLabel={(option) => option.name}
+                        value={inventoryItem}
+                        onChange={(event, newValue) => {
+                            setInventoryItem(newValue);
+                        }}
                         renderInput={(params) => <TextField {...params} label="Inventory Item" variant="outlined" />}
                         />
                 </Grid>
@@ -81,7 +86,9 @@ export default function StatisticsPage(props) {
                             autoOk={true}
                             maxDate={endDate}
                             value={startDate}
-                            onChange={handleStartDateChange}
+                            onChange={(event, newValue) => {
+                                setStartDate(newValue);
+                            }}
                             KeyboardButtonProps={{
                                 'aria-label': 'change date',
                             }}
@@ -101,7 +108,9 @@ export default function StatisticsPage(props) {
                             autoOk={true}
                             minDate={startDate}
                             value={endDate}
-                            onChange={handleEndDateChange}
+                            onChange={(event, newValue) => {
+                                setEndDate(newValue);
+                            }}
                             KeyboardButtonProps={{
                                 'aria-label': 'change date',
                             }}
