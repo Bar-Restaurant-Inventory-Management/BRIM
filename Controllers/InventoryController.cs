@@ -11,8 +11,6 @@ namespace BRIM
 	{
 		private readonly ILogger<InventoryController> _logger;
 		private IInventoryManager _inventory;
-		
-
 
 		public InventoryController(ILogger<InventoryController> logger,IInventoryManager inventory)
 		{
@@ -82,8 +80,7 @@ namespace BRIM
 			}
 			return Content("Success");
 		}
-		
-		
+
 		public class ItemViewModel
 		{
 			public IReadOnlyList<Item> Items { get; set; }

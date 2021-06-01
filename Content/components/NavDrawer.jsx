@@ -4,13 +4,14 @@ import {
   ListItem,
   List,
   ListItemIcon,
-  ListItemText
+    ListItemText,
+    Divider
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
+import InsertChartIcon from '@material-ui/icons/InsertChart';
+import LocalBarIcon from '@material-ui/icons/LocalBar';
+import LibraryBooksIcon from '@material-ui/icons/LibraryBooks';
 import InboxIcon from "@material-ui/icons/MoveToInbox";
-import NtfcnSnackbar from './notifications/NtfcnSnackbar.jsx';
-import NtfcnDialog from './notifications/NtfcnDialog.jsx';
-import MailIcon from "@material-ui/icons/Mail";
 import { withRouter } from "react-router-dom";
 
 //https://codesandbox.io/s/winter-brook-fnepe?file=/src/Drawer.jsx:0-1323
@@ -26,14 +27,19 @@ const NavDrawer = props => {
   const classes = useStyles();
   const itemsList = [
     {
-      text: "Items",
-      icon: <InboxIcon />,
+      text: "Inventory Items",
+      icon: <LocalBarIcon />,
       onClick: () => history.push("/")
     },
     {
-      text: "Recipes",
-      icon: <InboxIcon />,
+      text: "Recipe Book",
+      icon: <LibraryBooksIcon />,
       onClick: () => history.push("/recipes")
+    },
+    {
+      text: "Statistics",
+      icon: <InsertChartIcon />,
+      onClick: () => history.push("/stat")
     },
     {
       text: "Tags",
@@ -41,16 +47,21 @@ const NavDrawer = props => {
       onClick:()=>history.push("/tags")
     },
   ];
+
   return (
     <MUIDrawer variant="permanent" className={classes.drawer}>
       <List>
         {itemsList.map((item, index) => {
           const { text, icon, onClick } = item;
-          return (
-            <ListItem button key={text} onClick={onClick}>
-              {icon && <ListItemIcon>{icon}</ListItemIcon>}
-              <ListItemText primary={text} />
-            </ListItem>
+            return (
+              <div>
+                <ListItem button key={text} onClick={onClick}>
+                  {icon && <ListItemIcon>{icon}</ListItemIcon>}
+                  <ListItemText primary={text} />
+                </ListItem>
+               
+                <Divider />
+               </div>
           );
         })}
       </List>

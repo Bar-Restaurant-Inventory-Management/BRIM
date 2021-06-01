@@ -67,7 +67,7 @@ export default function RecipeTable(props){
             <Grid item xs={12}>
                 <Grid container justify="flex-start" alignItems="stretch" >
                     <Grid container item xs={12} direction="row"
-                        justify="flex start" >
+                        justify="flex-start" >
                         {state.recipes.map((row) => (
                             <RecipeCard key={row.id} {...row}></RecipeCard>
                             ))}
@@ -84,5 +84,4 @@ export default function RecipeTable(props){
 
         </Grid>
     );
-
 }
