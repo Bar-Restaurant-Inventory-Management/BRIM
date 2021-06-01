@@ -4,37 +4,30 @@ const data = [
     {
         name: '5/30/21',
         TestDrink1: 12,
-
     },
     {
         name: '5/31/21',
         TestDrink1: 31,
-
     },
     {
         name: '6/1/21',
         TestDrink1: 3,
-
     },
     {
         name: '6/2/21',
         TestDrink1: 5,
-
     },
     {
         name: '6/3/21',
         TestDrink1: 7,
-
     },
     {
         name: '6/4/21',
         TestDrink1: 0,
-
     },
     {
         name: '6/5/21',
         TestDrink1: 2,
-
     },
 ];
 

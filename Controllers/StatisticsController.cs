@@ -36,12 +36,17 @@ namespace BRIM
                     });
                 }*/
 
-        public ActionResult GetDrinkStatsByDate()
+        public ActionResult GetDrinkStatsByDate(int drinkId)
         {
-            DateTime endDate = DateTime.Today;
-            DateTime startDate = DateTime.Today.AddDays(-3);
+            Drink dr = new Drink();
+            dr.ID = drinkId;
 
-            List<DrinkStat> statList = _inventory.GetAllDrinkStats(startDate, endDate);
+            Console.WriteLine("received drink ID: {0}", drinkId);
+
+            DateTime endDate = DateTime.Today;
+            DateTime startDate = DateTime.Today.AddDays(-4);
+
+            List<DrinkStat> statList = _inventory.GetDrinkStatsByDate(dr, startDate, endDate);
 
             var statJson = statList.Select( p => new
             {
@@ -59,7 +64,6 @@ namespace BRIM
             {
                 stats = statJson.AsReadOnly()
             });
-
         }
     }
 }

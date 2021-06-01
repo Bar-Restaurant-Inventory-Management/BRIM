@@ -29,13 +29,10 @@ export default function StatisticsPage(props) {
     let [state, updateState] = React.useState({
         items: [],
     });
-
-    var previousWeek = new Date();
-    previousWeek.setDate( previousWeek.getDate() - 4 );
-
     const [inventoryItem, setInventoryItem] = React.useState(null);
+    var previousWeek = new Date();
+    previousWeek.setDate( previousWeek.getDate() - 7 );
     const [startDate, setStartDate] = React.useState(previousWeek);
-    console.log(new Date().getDate() - 4);
     const [endDate, setEndDate] = React.useState(new Date());
 
     const loadItemsFromServer = () => {
@@ -54,11 +51,14 @@ export default function StatisticsPage(props) {
         xhr.send();
     }
 
-    const getDrinkStatsByDate = () => {
-        let dataurl = "inventory/drinkstatsbydate"
+    const getDrinkStatsByDate = (newValue) => {
+        let data = new FormData;
+        let dataurl = "inventory/drinkstatsbydate" + "-" + (newValue.id);
+        data.append("drinkId", newValue.id);
         let xhr = new XMLHttpRequest();
         xhr.open('GET', dataurl, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
+        console.log(newValue);
 
         xhr.onload = () => {
             let stats = JSON.parse(xhr.responseText);
@@ -69,7 +69,6 @@ export default function StatisticsPage(props) {
 
     useEffect(() => {
         loadItemsFromServer()
-        getDrinkStatsByDate()
     }, []);
 
     return (
@@ -84,6 +83,7 @@ export default function StatisticsPage(props) {
                         value={inventoryItem}
                         onChange={(event, newValue) => {
                             setInventoryItem(newValue);
+                            getDrinkStatsByDate(newValue)
                         }}
                         renderInput={(params) => <TextField {...params} label="Inventory Item" variant="outlined" />}
                         />
